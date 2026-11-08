@@ -1,0 +1,33 @@
+# 宿主插件(SHDF)默认配置模板:首次启动拷至 plugins/SHDF/config.yml。
+# lobby 块供大厅模块 LobbyManager.LobbyConfig 解析;display 块供 component.display 渲染器解析。
+# 来源:2.5-大厅模式与最小闭环 §步骤9;10-表现层组件 display 配置块;README 对齐注⑩适用项
+
+# TODO(2.5): lobby 块默认模板(bounds/spawn/vote-seconds/min-players),bounds/spawn 子结构由大厅模块 LobbyConfig 定形 —— 出自 2.5-大厅模式与最小闭环 §步骤9
+lobby:
+  # 大厅活动边界(占位子结构,坐标为示例值)
+  bounds:
+    world: world
+    min: [0, 64, 0]
+    max: [100, 128, 100]
+  # 大厅出生点(占位子结构)
+  spawn:
+    world: world
+    x: 0.5
+    y: 64.0
+    z: 0.5
+    yaw: 0.0
+    pitch: 0.0
+  vote-seconds: 20
+  min-players: 2
+
+# TODO(5.1): display 块生效:refresh-interval=10、BossBar/Sidebar/Title 三开关、标题三段时长 —— 出自 10-表现层组件;display 配置块
+display:
+  refresh-interval: 10
+  boss-bar: true
+  side-bar: true
+  title: true
+  # 标题三段时长(刻)
+  title-durations:
+    fade-in-ticks: 5
+    stay-ticks: 40
+    fade-out-ticks: 5

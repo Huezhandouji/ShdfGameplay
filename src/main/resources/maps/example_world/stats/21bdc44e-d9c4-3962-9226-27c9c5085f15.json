@@ -1,0 +1,25 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 5439,
+      "minecraft:walk_one_cm": 51,
+      "minecraft:total_world_time": 5439,
+      "minecraft:leave_game": 10,
+      "minecraft:sneak_time": 33,
+      "minecraft:play_time": 5439,
+      "minecraft:damage_dealt": 10,
+      "minecraft:jump": 2,
+      "minecraft:time_since_death": 5439
+    },
+    "minecraft:picked_up": {
+      "minecraft:blaze_powder": 4,
+      "minecraft:diamond_hoe": 2,
+      "minecraft:leather_boots": 2,
+      "minecraft:gold_ingot": 1,
+      "minecraft:command_block": 1,
+      "minecraft:iron_ingot": 2,
+      "minecraft:iron_helmet": 1
+    }
+  },
+  "DataVersion": 4671
+}

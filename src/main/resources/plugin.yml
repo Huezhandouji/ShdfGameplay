@@ -1,0 +1,13 @@
+name: ShdfGameplay
+version: '${version}'
+
+main: com.shdfGameplay.ShdfGameplay
+paper-plugin-loader: com.shdfGameplay.ShdfGameplayLoader
+api-version: '1.21.11'
+load: POSTWORLD
+
+# TODO(2.5): 框架硬依赖 depend: [Hydrokarbs](注册时序反转:depend + onEnable load 后显式注册)+角色系统软依赖 softdepend: [ShadowHunterRolesPlugin];保留 name/version/main/paper-plugin-loader/api-version/load/authors 全部既有字段,不写 commands: 段(/shdf 走 Brigadier 代码注册) —— 出自 README 对齐注③⑧;08-角色桥接 §8.8 表;施工计划/2.5-大厅模式与最小闭环(:29)。
+depend: [ Hydrokarbs ]
+softdepend: [ ShadowHunterRolesPlugin ]
+
+authors: [ HueZhandouji ]

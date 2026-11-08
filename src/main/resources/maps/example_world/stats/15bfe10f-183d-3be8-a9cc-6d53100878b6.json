@@ -1,0 +1,20 @@
+{
+  "stats": {
+    "minecraft:picked_up": {
+      "minecraft:diamond_sword": 1,
+      "minecraft:lapis_block": 1
+    },
+    "minecraft:custom": {
+      "minecraft:damage_resisted": 60,
+      "minecraft:time_since_rest": 6593,
+      "minecraft:total_world_time": 6593,
+      "minecraft:leave_game": 15,
+      "minecraft:damage_taken": 402,
+      "minecraft:play_time": 6593,
+      "minecraft:damage_dealt": 5,
+      "minecraft:player_kills": 1,
+      "minecraft:time_since_death": 6593
+    }
+  },
+  "DataVersion": 4671
+}

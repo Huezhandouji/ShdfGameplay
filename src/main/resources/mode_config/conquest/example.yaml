@@ -1,0 +1,15 @@
+map_path: "maps/example_world"
+metadata:
+  hotpoints:
+    A:
+      #据点信息，如位置，区域...
+    B:
+      #...
+  spawns:
+    team_red:
+      #表示出生点区域...
+    team_blue:
+      #...
+
+  play_region:
+    #表示一个区域，限制玩家在这个区域内

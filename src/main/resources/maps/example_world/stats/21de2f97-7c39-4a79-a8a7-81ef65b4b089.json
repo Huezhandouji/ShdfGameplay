@@ -1,0 +1,30 @@
+{
+  "stats": {
+    "minecraft:custom": {
+      "minecraft:time_since_rest": 2725,
+      "minecraft:walk_one_cm": 113446,
+      "minecraft:leave_game": 83,
+      "minecraft:damage_taken": 1680,
+      "minecraft:play_time": 63903,
+      "minecraft:damage_dealt": 36,
+      "minecraft:jump": 808,
+      "minecraft:time_since_death": 2631,
+      "minecraft:sprint_one_cm": 166904,
+      "minecraft:fall_one_cm": 32784,
+      "minecraft:total_world_time": 63903,
+      "minecraft:fly_one_cm": 192963,
+      "minecraft:sneak_time": 1,
+      "minecraft:deaths": 5
+    },
+    "minecraft:used": {
+      "minecraft:diamond_hoe": 8
+    },
+    "minecraft:mined": {
+      "minecraft:spruce_leaves": 4
+    },
+    "minecraft:picked_up": {
+      "minecraft:spruce_sapling": 2
+    }
+  },
+  "DataVersion": 4671
+}

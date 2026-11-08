@@ -1,0 +1,11 @@
+map_path: "maps/example_world"
+metadata:
+  spawns:
+    team_red:
+      #表示红队出生区域...
+    team_blue:
+      #...
+  boss_life_number: #被选中当首领的那个玩家被杀几次所在队伍输掉...
+
+  play_region:
+  #表示一个区域，限制玩家在这个区域内
