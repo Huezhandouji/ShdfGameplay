@@ -1,9 +1,8 @@
 package com.shdfGameplay.bridge.role;
 
 /**
- * 桥接进程级持有器:svc 三成员封闭(框架侧 14-陷阱清单 §14.25)与 ★23 分层夹逼下的唯一合规注入点
+ * 桥接进程级持有器:svc 三成员封闭与 ★23 分层夹逼下的唯一合规注入点
  * ——组件(component/role 为 ★23 豁免包)经它取桥接,不经 Services、不经 Spec 构造参数。
- * 来源:施工计划 3.4-RoleComponent四facet 步骤1/§14.25 待裁决;README 对齐注①(包映射)适用。
  */
 public final class RoleBridge {
 

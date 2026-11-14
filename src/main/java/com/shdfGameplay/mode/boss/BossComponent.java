@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Boss 实体生成与血线阶段推进:start 期生成实体(玩家可见副作用不在 awake)、update() 轮询血量(R2 裁决)、死亡广播;Spec.checkMap 前置校验 boss 出生点词料。
+ * Boss 实体生成与血线阶段推进:start 期生成实体(玩家可见副作用不在 awake)、update() 轮询血量(R2 裁决)、死亡广播;
+ * 出生点等本图配置读会话 MatchConfigComponent(开局前 MatchBootstrap 解析装入,地图词料通道已弃用)。
  * 来源:05-四模式矩阵 §5.2-C BossComponent 骨架/§5.5-#21;6.3-首领战模式 步骤 4(R2 裁决/Q4 默认轮询口径);README 对齐注⑨(§5.2 旧 map.spawns("boss") 示例按 v1.10/11 重读)。
  */
 public final class BossComponent extends MatchModeComponent {
@@ -61,7 +62,10 @@ public final class BossComponent extends MatchModeComponent {
 
         @Override
         public List<String> checkMap(final MapDefinition map, final MatchModeConfig cfg) {
-            // TODO(6.3): checkMap 读 boss 出生点经 ShdfMapKeys.BOSS_MAP_DATA 词料(§5.2 旧 map.spawns("boss") 示例按 v1.10/11 重读);缺失 → List.of("缺少 boss 出生点") 进切换 A3 拒绝 —— 出自 6.3-首领战模式 步骤 4;05-四模式矩阵 §5.2-C Spec 骨架。
+            // TODO(6.3): 出生点/游玩区等本图配置改读会话组件 svc().self().session().component(MatchConfigComponent.class)
+            //             .config(BosswarSpecificConfig.class)(SessionView 只读软接入;配置开局前解析装入,跨模式切换存活);
+            //             完整性校验前移至 BosswarSpecificConfig.Parser 开局响亮(带病配置不进会话);
+            //             checkMap 仅剩地图侧校验(mapTags 含 boss 等,MapDefinition.TAGS) —— 出自 6.3-首领战模式 步骤 4;05-四模式矩阵 §5.2-C(词料通道已弃用)。
             return List.of();
         }
     }

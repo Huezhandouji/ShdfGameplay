@@ -7,7 +7,6 @@ import java.util.Set;
  * 模式对角色系统的「规则请求」纯数据(恰八字段+AssignmentStrategy+NONE 常量):机制=声明不是命令,
  * 解释执行全在 RoleComponent 的 Loadout facet(组件内写 if (policy == X_POLICY) 即违规);
  * 奖励不经本 record(只住 RoleComponent.Spec 的 rewards)。
- * 来源:08-角色桥接 §8.6;施工计划 3.2 步骤3;README 对齐注①适用。
  */
 public record RolePolicy(
         /** false = 同一角色全场唯一(含跨队),true = 允许重复。 */

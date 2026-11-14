@@ -4,8 +4,8 @@ import com.hydrokarbs.engine.event.MatchModeInstanceEvent;
 import java.util.UUID;
 
 /**
- * 击杀归属合成事件:死前读序合成的实例事件词汇(普通 record 实现框架事件开放根,不进 Bukkit 总线)。
- * 来源:08-角色桥接 §8.4 v3.1 注;09-角色组件层 §9.3;施工计划/阶段3 3.4-RoleComponent四facet 步骤2;README 对齐注①⑤。
+ * 击杀归属合成事件:官方死亡信号(RoleDeathEvent 载荷=死时所持角色)+lastDamagerUuid 归因合成的实例事件词汇(普通 record 实现框架事件开放根,不进 Bukkit 总线)。
+ * 来源:08-角色桥接 §8.4 v3.1 注;角色插件 RoleAPI 事件订阅面(3.5 步骤2 改造);09-角色组件层 §9.3;施工计划/阶段3 3.4-RoleComponent四facet 步骤2;README 对齐注①⑤。
  */
 public record RoleKillEvent(
         UUID killerUuid,

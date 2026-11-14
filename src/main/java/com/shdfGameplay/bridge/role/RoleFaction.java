@@ -2,9 +2,8 @@ package com.shdfGameplay.bridge.role;
 
 /**
  * 阵营枚举:SHADOW/HUNTER/UNKNOWN/OTHER(OTHER 兜住角色系统未来的新阵营名);
- * 读方向=组件操作面返回字符串经 parse 映射,写方向=RoleFaction 转阵营名(OTHER 无对应名即拒绝且不发起操作);
+ * 读方向=组件操作面返回字符串经 parse 映射,写方向=转阵营名(OTHER 无对应名即拒绝且不发起操作);
  * 外部 core.Faction 枚举不参与(不泄漏其类型,只认字符串)。
- * 来源:08-角色桥接 §8.2 映射口径/§8.10(二);施工计划 3.1 步骤2;README 对齐注①适用。
  */
 public enum RoleFaction {
 

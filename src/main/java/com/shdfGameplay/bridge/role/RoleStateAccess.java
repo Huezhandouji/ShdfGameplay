@@ -4,12 +4,9 @@ import java.util.OptionalInt;
 import java.util.UUID;
 
 /**
- * 角色数据的类型化读写:把 executeComponentOperation 的字符串协议包成 energy/sante/buffs 七具名动词
- * 与下标重载,并把「读不到」用 OptionalInt 显式建模(null 三重含义压扁必炸,§14.14),绝不抛、不回哨兵 -1。
- *
- * <p>纪律:①所有方法只准主线程调用(会触碰玩家状态,08 §8.3 类头);②组件 id 与动词 token 只住本层私有常量,
- * 上层禁止拼协议串(含 "#" 下标);③写型口径=operate 回非 null(含 "")即成功、null 即失败(""=已识别无回值也是成功)。</p>
- * 来源:08-角色桥接 §8.3/§8.4;施工计划 3.2-类型化访问与策略数据件 步骤1/步骤5;README 对齐注①适用。
+ * 角色数据的类型化读写:把 executeComponentOperation 的字符串协议包成 energy/sante/buffs 七具名动词与下标重载;
+ * 「读不到」用 OptionalInt 显式建模,绝不抛、不回哨兵 -1。纪律:只准主线程调用;
+ * 协议串(含 "#" 下标)只住本层私有常量;写型口径=operate 回非 null(含 "")即成功。
  */
 public final class RoleStateAccess {
 

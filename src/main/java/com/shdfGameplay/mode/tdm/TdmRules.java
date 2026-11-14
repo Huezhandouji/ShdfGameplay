@@ -24,7 +24,7 @@ public final class TdmRules {
         /**
          * 计一次击杀的分值:自杀不计;连杀 ≥ 阈值(缺省 5)加成。
          *
-         * @param kill RoleComponent 合成并发布到实例总线的击杀事件(LOWEST 监听器路由,禁 player.getKiller(),§14.4)
+         * @param kill RoleComponent 合成并发布到实例总线的击杀事件(官方死亡信号经 Directory.dispatch 路由,禁 player.getKiller(),§14.4)
          * @return 本次击杀得分(骨架桩恒 0)
          */
         public static int score(final RoleKillEvent kill) {

@@ -5,8 +5,6 @@ import java.util.function.Consumer;
 
 /**
  * 散场单闸:全工程唯一 subscribeSessionEvents 订阅点——Dissolved 接引收尾、MemberLeft 单人传送回大厅、ModeSwitchCompleted(to=limbo) 记待散信号。
- *
- * <p>来源:04 §4.6 代码块/§4.8 命题②;2.5 步骤6。</p>
  */
 public final class LobbyReturnListener implements Consumer<SessionEventView> {
 

@@ -4,8 +4,6 @@ import java.util.UUID;
 
 /**
  * 大厅成员准备账本:全员 ready 即提前收票/立即开局信号(人数门槛仍要过)。
- *
- * <p>来源:04 §4.2;2.5 大厅三件之一。</p>
  */
 public final class ReadyState {
 

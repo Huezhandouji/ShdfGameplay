@@ -4,9 +4,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 角色目录只读快照:awake 期解析缓存,显式 TTL(默认 30s——用到快照处须写明「数据可能滞后 ≤ TTL」);
- * 无写口,刷新=重新 fetch 整体替换不做增量;玩家当前角色/能量永不缓存、永远现问(角色系统权威,08 §8.5 表第 1 行)。
- * 来源:08-角色桥接 §8.5;施工计划 3.2 步骤2;README 对齐注①适用。
+ * 角色目录只读快照:awake 期解析缓存,显式 TTL(默认 30s,用到快照处须写明「数据可能滞后 ≤ TTL」);
+ * 无写口,刷新=重新 fetch 整体替换不做增量;玩家当前角色/能量永不缓存、永远现问(角色系统权威)。
  */
 public record RoleCatalog(
         Set<String> roleIds,

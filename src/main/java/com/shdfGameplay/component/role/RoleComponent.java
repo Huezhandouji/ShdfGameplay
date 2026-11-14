@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
-import org.bukkit.event.entity.PlayerDeathEvent;
 
 /**
  * 角色接入唯一落点(L3):模式实例内一切角色系统接入的强类型读口,状态唯一三表(occupied/lastSeen/reselects)随实例生灭,stop() 全员 clearRole 是角色清场唯一闸门。
@@ -22,7 +21,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
  */
 public final class RoleComponent extends MatchModeComponent {
 
-    // TODO(3.4): 组件不注册 Bukkit 监听器(死亡路由归 listener/RoleSignalListener);包内不出现其他玩法的内容词汇(★23 分层判据);异常降级口径=坏数据(目录缺失/操作面拒绝)降级为"该玩家无角色"不炸实例(实例隔离) —— 出自 3.4-RoleComponent四facet 陷阱与纪律 §14.5/§15.1 行;09-角色组件层 §9.2 异常隔离行。
+    // TODO(3.4): 组件不注册 Bukkit 监听器、不直接订阅角色插件事件流(死亡信号经 RoleComponentDirectory.dispatch 路由进来,订阅归 L0);包内不出现其他玩法的内容词汇(★23 分层判据);异常降级口径=坏数据(目录缺失/操作面拒绝)降级为"该玩家无角色"不炸实例(实例隔离) —— 出自 3.4-RoleComponent四facet 陷阱与纪律 §14.5/§15.1 行;09-角色组件层 §9.2 异常隔离行。
 
     private final Spec spec;
 
@@ -77,10 +76,19 @@ public final class RoleComponent extends MatchModeComponent {
     // ── 对外强类型读口(其他组件消费面;读口转发,桥接零可见)──────
 
     /**
-     * LOWEST 监听器(listener/RoleSignalListener)的唯一落点:读死前状态、经 RoleEventSynth 合成并发布实例总线(监听器只路由,不合成)。
+     * 角色插件官方死亡信号(RoleSignal.DEATH 经 RoleComponentDirectory.dispatch)的唯一落点:
+     * 载荷 deadRoleId 即"死亡那一刻"所持角色(角色插件赶在清角之前发布——原 LOWEST 抢读时序已随自探测删除),
+     * 击杀归因与 RoleKillEvent 合成在此进行(dispatch 只路由,不合成)。
      */
-    public void onVanillaDeath(PlayerDeathEvent event) {
-        // 四原始值抽取薄层(参与者在场经 svc().self().participant(killer)、原生归因经 victim.getLastDamageCause() instanceof EntityDamageByEntityEvent 取 damager)+RoleEventSynth.trustedKill 门:通过→发布 RoleKillEvent,不通过→发布 ParticipantKilled(victim,null,cause) —— 出自 3.5-监听器与击杀归属 步骤2(:44-48);09-角色组件层 §9.3 读口注释。
+    public void onRoleDeath(UUID victim, String deadRoleId) {
+        // TODO(3.5): 官方事件在角色插件 PlayerDeathEvent 处理器内同步发布(主线程、分发窗口内)⇒ 此刻 Bukkit.getPlayer(victim)
+        // 仍非 null、getLastDamageCause() 仍可读;四原始值抽取薄层:①killer=facade.lastDamagerUuid(victimPlayer)——
+        // ★ 不是 player.getKiller()(全仓含测试禁用);②killerInInstance=svc().self().participant(killer) 在场;
+        // ③nativeDamager=victimPlayer.getLastDamageCause() instanceof EntityDamageByEntityEvent 取 damager(投射物只做交叉验证不做归属来源);
+        // ④cause;+RoleEventSynth.trustedKill 门:通过→发布 RoleKillEvent.of(killer, victim, deadRoleId, svc().self().tick()),
+        // 不通过→发布 ParticipantKilled(victim, null, cause)(javap 已核 record(int,long,UUID,UUID,DamageCause) implements Structural);
+        // killer 为 null(摔死/箭矢等无归属)→ 不计分同走 ParticipantKilled;victimPlayer 取不到(极端窗口)→ 静默返回不产实例事件 ——
+        // 出自 3.5-监听器与击杀归属 步骤2 改造(死前读序删除,roleId 改由官方事件载荷提供);08-角色桥接 §8.4;14-陷阱清单 §14.4/§14.5。
     }
 
     /**

@@ -22,7 +22,7 @@ public record BombConfig(
      * @return 平衡参数载体
      */
     public static BombConfig from(final MatchModeConfig cfg) {
-        // TODO(6.2): 解析 games/bomb_defusal/game.yml 参数(经 GameConfig 闭包注入,MatchModeConfig 形参不对宿主供给);容错三铁律——缺键默认、非法值降级 WARN、带文件名报错 —— 出自 6.2-炸弹攻防;05-四模式矩阵 §5.4;2.5 步骤 7(GameConfigs 装配管线)。
+        // TODO(6.2): 解析 games/bomb_defusal/game.yml 参数(经 GameConfig 闭包注入,MatchModeConfig 形参不对宿主供给);容错三铁律——缺键默认、非法值降级 WARN、带文件名报错 —— 出自 6.2-炸弹攻防;05-四模式矩阵 §5.4;2.5 步骤 7(GameConfigManager 装配管线)。
         return new BombConfig(13, 6, 3, 40, 7, 3.5, 6.0);
     }
 

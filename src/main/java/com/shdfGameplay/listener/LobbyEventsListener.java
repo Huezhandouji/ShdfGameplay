@@ -8,9 +8,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 /**
- * 大厅三事件路由件(方案新增):PlayerMove 节流进出场 / PlayerQuit 清账 / PlayerJoin 自查接回——住 listener/ 包(全工程唯一允许 @EventHandler 的层),只路由不做大厅业务。
- *
- * <p>来源:04 §4.2(:55-58);2.5 步骤2;12-代码骨架.md:202 与 3.5:108(listener/ 唯一 @EventHandler 层);本方案新增裁决。</p>
+ * 大厅三事件路由件:PlayerMove 节流进出场 / PlayerQuit 清账 / PlayerJoin 自查接回——住 listener/ 包(全工程唯一允许 @EventHandler 的层),只路由不做大厅业务。
  */
 public final class LobbyEventsListener implements Listener {
 

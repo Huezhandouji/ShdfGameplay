@@ -1,4 +1,7 @@
 map_path: "maps/example_world"
+display_name: "示例首领模式配置"
+description: "示例首领模式的描述"
+icon: "STONE" #图标
 metadata:
   spawns:
     team_red:

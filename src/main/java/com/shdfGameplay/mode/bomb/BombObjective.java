@@ -11,11 +11,14 @@ import java.util.List;
 
 /**
  * 炸弹目标状态机(每张图每个炸弹点一个实例):UNPLANTED→PLANTED→EXPLODED|DEFUSED;progress() 供表现层渲染。
- * 来源:05-四模式矩阵 §5.2-A BombObjective 骨架;6.1-炸弹攻防 步骤 3;README 对齐注⑨(map 词料 API 已删,bomb-site 区域改读 metadata 玩法命名空间键)。
+ * 来源:05-四模式矩阵 §5.2-A BombObjective 骨架;6.1-炸弹攻防 步骤 3;README 对齐注⑨(map 词料 API 已删;
+ * bomb-site 区域配置读会话 MatchConfigComponent 装载的炸弹模式专用 record,地图词料通道已弃用)。
  */
 public final class BombObjective {
 
-    // TODO(6.1): 每炸弹点一实例;bomb-site 区域读 ShdfMapKeys.BOMB_MAP_DATA 词料(metadata 玩法命名空间键——旧 map.spawns()/框架 map 包词料 API 已删 v1.10/11);引信计时在实例 update() 节拍内查 fuseDeadlineTick,不自起任务 —— 出自 6.1-炸弹攻防 步骤 3/要点 4;05-四模式矩阵 §5.2。
+    // TODO(6.1): 每炸弹点一实例;bomb-site 区域读会话组件 svc().self().session().component(MatchConfigComponent.class)
+    //             .config(炸弹专用配置 record.class)(SessionView 只读软接入;配置开局前 MatchBootstrap 解析装入,跨模式切换存活);
+    //             引信计时在实例 update() 节拍内查 fuseDeadlineTick,不自起任务 —— 出自 6.1-炸弹攻防 步骤 3/要点 4;05-四模式矩阵 §5.2。
     /** 炸弹状态机:UNPLANTED → PLANTED → EXPLODED | DEFUSED。 */
     public enum BombStatus {
         UNPLANTED, PLANTED, EXPLODED, DEFUSED
@@ -62,7 +65,8 @@ public final class BombObjective {
 
             @Override
             public List<String> checkMap(final MapDefinition map, final MatchModeConfig cfg) {
-                // TODO(6.1): 断言地图存在带 bomb-site 标签的区域(词料经 ShdfMapKeys.BOMB_MAP_DATA),且每个该类区域有配套 plant_*/defuse_* 交互点;缺失清单非空 → 切换 A3 拒绝(detail 带问题清单) —— 出自 6.1-炸弹攻防 步骤 3;6.2-炸弹攻防 步骤 3(§3.2-A3)。
+                // TODO(6.1): bomb-site 区域与配套 plant_*/defuse_* 交互点的完整清单校验前移至炸弹模式 SpecificConfigParser
+                //             开局响亮(带病配置不进会话);checkMap 仅剩地图侧校验(mapTags 等,MapDefinition.TAGS) —— 出自 6.1-炸弹攻防 步骤 3;6.2-炸弹攻防 步骤 3(§3.2-A3)。
                 return List.of();
             }
         }
