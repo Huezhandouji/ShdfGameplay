@@ -5,13 +5,15 @@ import com.shdfGameplay.map.regionNotation.Region;
 import com.shdfGameplay.map.regionNotation.SphereRegion;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.util.Vector;
 
 /**
- * 配置解析工具:metadata 自由嵌套映射({@link GameConfig} deepValues 产物)→ 玩法侧值对象。
+ * 配置解析工具:嵌套配置映射({@link #deepValues} 展开,GameConfig metadata 与 LobbyConfig lobby 块共用)→ 玩法侧值对象。
  * 区域解析入口为 {@link #parseRegion}(按 type 分发),各具体表示法亦可单独调用。
  * 非法配置一律响亮抛 {@link IllegalStateException},与 GameConfig.from 的带病口径一致,跳过与否由上层决定。
  */
@@ -178,6 +180,16 @@ public final class ConfigUtil {
             out.add(element);
         }
         return List.copyOf(out);
+    }
+
+    /** ConfigurationSection → 保序嵌套 Map(本类区域/标量解析的输入形态;叶子值原样、子 section 递归展开)。 */
+    static Map<String, Object> deepValues(final ConfigurationSection section) {
+        final Map<String, Object> out = new LinkedHashMap<>();
+        for (final String key : section.getKeys(false)) {
+            final Object value = section.get(key);
+            out.put(key, value instanceof final ConfigurationSection child ? deepValues(child) : value);
+        }
+        return out;
     }
 
     /** [x, y, z] 列表 → Vector:恰好 3 个数字分量(定位消息用 what 标注所在键)。 */

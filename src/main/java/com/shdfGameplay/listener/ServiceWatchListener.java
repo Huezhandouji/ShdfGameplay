@@ -18,15 +18,13 @@ public final class ServiceWatchListener implements Listener {
         this.onInvalidate = onInvalidate;
     }
 
-    // TODO(3.1): 主类 onEnable 注册并接 () -> RoleBridge.facade().invalidate()(lambda 体住 L0);只路由 invalidate 回调不做别的事 —— 出自 08-角色桥接 §8.8 动态感知行(:313);施工计划3.1(先于订阅面施工)。
-
     @EventHandler
     public void onServiceRegister(ServiceRegisterEvent event) {
-        // onInvalidate.run()——角色插件注册即失效缓存并触发懒解析重订(只路由回调,不做服务定位) —— 出自 08-角色桥接 §8.8 动态感知行。
+        onInvalidate.run();    // 角色插件注册即失效缓存并触发懒解析重订(只路由回调,不做服务定位) —— 出自 08-角色桥接 §8.8 动态感知行。
     }
 
     @EventHandler
     public void onServiceUnregister(ServiceUnregisterEvent event) {
-        // onInvalidate.run()——角色插件注销即失效缓存(旧订阅令牌随角色插件 onDisable 一并作废,退订无害) —— 出自 08-角色桥接 §8.8 动态感知行。
+        onInvalidate.run();    // 角色插件注销即失效缓存(旧订阅令牌随角色插件 onDisable 一并作废,退订无害) —— 出自 08-角色桥接 §8.8 动态感知行。
     }
 }

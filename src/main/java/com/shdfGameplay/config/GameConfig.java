@@ -50,7 +50,7 @@ public record GameConfig(String modeId, String mapId, Path mapPath, String displ
         }
         final String mapId = stripExtension(file.getFileName().toString());
         final ConfigurationSection metadata = yaml.getConfigurationSection("metadata");
-        final Map<String, Object> rawMetadata = metadata == null ? Map.of() : deepValues(metadata);
+        final Map<String, Object> rawMetadata = metadata == null ? Map.of() : ConfigUtil.deepValues(metadata);
         return new GameConfig(modeId, mapId, mapPath,
                 orDefault(yaml.getString("display_name"), mapId),
                 orDefault(yaml.getString("description"), ""),
@@ -74,14 +74,5 @@ public record GameConfig(String modeId, String mapId, Path mapPath, String displ
     private static String stripExtension(final String fileName) {
         return fileName.endsWith(".yaml") ? fileName.substring(0, fileName.length() - 5)
                 : fileName.substring(0, fileName.length() - 4);
-    }
-
-    private static Map<String, Object> deepValues(final ConfigurationSection section) {
-        final Map<String, Object> out = new LinkedHashMap<>();
-        for (final String key : section.getKeys(false)) {
-            final Object value = section.get(key);
-            out.put(key, value instanceof final ConfigurationSection child ? deepValues(child) : value);
-        }
-        return out;
     }
 }

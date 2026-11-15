@@ -1,0 +1,5 @@
+# 这个目录下包含每个模式的地图配置
+# 每个配置是一个 地图+模式 的组合
+map_modes:
+  - "bosswar/example"
+  - "conquest/example"

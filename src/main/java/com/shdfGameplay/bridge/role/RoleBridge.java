@@ -6,8 +6,6 @@ package com.shdfGameplay.bridge.role;
  */
 public final class RoleBridge {
 
-    // TODO(3.4): 主类 onEnable L0 显式 attach(设计未指明注入路径,3.4 列待裁决 §14.25,L0 显式为推荐形态;不 attach 则走懒构造) —— 出自 施工计划3.4 步骤1/待裁决
-
     /** 进程级唯一实例(显式 attach 保持单一实例;volatile 仅为防御性——装配与消费均在主线程)。 */
     private static volatile RoleFacade instance;
 

@@ -1,14 +1,18 @@
-# 宿主插件(SHDF)默认配置模板:首次启动拷至 plugins/SHDF/config.yml。
-# lobby 块供大厅模块 LobbyManager.LobbyConfig 解析;display 块供 component.display 渲染器解析。
-# 来源:2.5-大厅模式与最小闭环 §步骤9;10-表现层组件 display 配置块;README 对齐注⑩适用项
+# 宿主插件(SHDF)默认配置模板:随包资源(含本文件与 mode_config/)首启全量释放至 plugins/ShdfGameplay/,
+# 已存在一律不覆写——改过就保得住,删除后重启即从 jar 补回默认。
+# lobby 块由 config 侧 GameConfigManager 装填为 config.LobbyConfig;图配置由 map_mode_config 标记文件点名读取;
+# display 配置块已删除(表现层常量后续硬编码)。
+# 来源:2.5-大厅模式与最小闭环 §步骤9;README 对齐注⑩适用项
 
-# TODO(2.5): lobby 块默认模板(bounds/spawn/vote-seconds/min-players),bounds/spawn 子结构由大厅模块 LobbyConfig 定形 —— 出自 2.5-大厅模式与最小闭环 §步骤9
+# TODO(2.5): lobby 块默认模板(bounds/spawn/countdown/enable_ready/map_vote_setting/min-players),bounds 子结构同 mode_config 区域表示法 —— 出自 2.5-大厅模式与最小闭环 §步骤9
 lobby:
-  # 大厅活动边界(占位子结构,坐标为示例值)
+  # 大厅活动边界:世界名 + 区域表示法(与 mode_config 图配置同构,type=cube|sphere、form 二选一)
   bounds:
     world: world
-    min: [0, 64, 0]
-    max: [100, 128, 100]
+    type: "cube"
+    form: "corners"
+    corner1: [0, 64, 0]
+    corner2: [100, 128, 100]
   # 大厅出生点(占位子结构)
   spawn:
     world: world
@@ -17,17 +21,18 @@ lobby:
     z: 0.5
     yaw: 0.0
     pitch: 0.0
-  vote-seconds: 20
+  # 开局倒计时(tick):开局条件(人数/全员准备)满足后再等多少 tick 正式开局
+  countdown: 600
+  # 是否启用玩家准备(启用后须全员准备才开启倒计时)
+  enable_ready: false
+  # 地图投票设置
+  map_vote_setting:
+    # 是否开启地图投票(false=每次大厅启动时随机抽一张图)
+    enabled: true
+    # 大厅启动时从全部地图玩法中抽取几张作为投票候选
+    map_amount: 3
   min-players: 2
 
-# TODO(5.1): display 块生效:refresh-interval=10、BossBar/Sidebar/Title 三开关、标题三段时长 —— 出自 10-表现层组件;display 配置块
-display:
-  refresh-interval: 10
-  boss-bar: true
-  side-bar: true
-  title: true
-  # 标题三段时长(刻)
-  title-durations:
-    fade-in-ticks: 5
-    stay-ticks: 40
-    fade-out-ticks: 5
+# 地图模式标记文件(相对宿主数据目录):其 map_modes 列表(条目 模式/图)点名要读取的图配置,
+# 列表外的 mode_config/ 文件不入集;缺省/留白取 mode_config/map_modes.yaml
+map_mode_config: "mode_config/map_modes.yaml"

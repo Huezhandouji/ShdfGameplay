@@ -10,15 +10,19 @@ public final class RoleEventHandle implements AutoCloseable {
     /** 所属防腐层(close 经它回移除在册与退订;包私有构造,只由 RoleFacade#subscribeRoleEvents 造)。 */
     private final RoleFacade owner;
 
-    RoleEventHandle(RoleFacade owner) {
-        this.owner = owner;
-    }
+    /** 在册条目(null=空句柄——handler 为 null 时返回的占位,close 无事可做)。 */
+    private final RoleFacade.Registration registration;
 
-    // TODO(3.1): close=从 owner 在册表移除+退订当前令牌(幂等,重复 close 无害;令牌可能已随角色插件 reload 作废,退订作废令牌无害) —— 出自 角色插件 RoleAPI#subscribeEvents javadoc;08-角色桥接 §8.8。
+    RoleEventHandle(RoleFacade owner, RoleFacade.Registration registration) {
+        this.owner = owner;
+        this.registration = registration;
+    }
 
     /** 退订并从 RoleFacade 在册表移除;幂等。 */
     @Override
     public void close() {
-        // 3.1:见类头 TODO——移除在册+退订令牌,无其他状态。
+        // 移除在册+退订当前令牌全经 owner 落点(重复 close 无害;令牌可能已随角色插件 reload 作废,退订无害)
+        // —— 出自 角色插件 RoleAPI#subscribeEvents javadoc;08-角色桥接 §8.8;施工计划3.1 步骤6 订阅面。
+        owner.removeRegistration(registration);
     }
 }
