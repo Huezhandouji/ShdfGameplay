@@ -9,20 +9,22 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
- * 游戏流程总开关:launch 启动流程控制并初始化大厅运行态;stop 停止流程控制、
- * 解散全部运行会话并把会话成员传回大厅出生点(lobby.spawn,两段传送:
- * stop 立即第一段,Dissolved 后第二段补传钉死最终落点——收摊传送不可避开,
+ * 游戏流程总开关:launch 启动流程控制并初始化大厅运行态+开局周期(MatchCycle 联动起票节拍);
+ * stop 先停开局周期(此后无开局判定抢跑)再停止流程控制、解散全部运行会话并把会话成员传回大厅出生点
+ * (lobby.spawn,两段传送:stop 立即第一段,Dissolved 后第二段补传钉死最终落点——收摊传送不可避开,
  * 见设计文档 §2.1/§6.2)。
  * 状态自持(RUNNING 标志翻转在全部动作成功后),与 LobbyManager.open/close 同步;
  * 幂等可重入:重复 launch/stop 无副作用返回 false,stop 后可再次 launch。
  * 契约:全方法仅主线程调用(命令回调与引擎 tick 均主线程),内部不做同步。
- * —— 出自 本次任务(shdf-launchstop-流程开关);04-大厅模式 §4.6/§4.8 传送分工。
+ * —— 出自 本次任务(shdf-launchstop-流程开关);周期联动出自 2.5 大厅逻辑(04-大厅模式 §4.2/§4.3);
+ * 04-大厅模式 §4.6/§4.8 传送分工。
  */
 public final class GameFlow {
 
     private final HydrokarbsApi hk;
     private final LobbyConfig lobbyConfig;
     private final LobbyManager lobby;
+    private final MatchCycle cycle;
     private final LobbyTeleport teleport;
     private final Logger log;
 
@@ -36,20 +38,23 @@ public final class GameFlow {
      * @param hk 框架 API(onEnable 在场检查后持有)
      * @param lobbyConfig onEnable 已缓存的大厅配置(不读盘)
      * @param lobby 大厅账本(open/close 由本类单调调用)
+     * @param cycle 开局周期缝(launch 起票节拍/stop 先停;生产 Bukkit 壳与测试假件各一)
      * @param teleport 大厅回传缝(生产 Bukkit/测试 fake 各一)
      * @param log 插件日志
      */
     public GameFlow(final HydrokarbsApi hk, final LobbyConfig lobbyConfig, final LobbyManager lobby,
-                    final LobbyTeleport teleport, final Logger log) {
+                    final MatchCycle cycle, final LobbyTeleport teleport, final Logger log) {
         this.hk = hk;
         this.lobbyConfig = lobbyConfig;
         this.lobby = lobby;
+        this.cycle = cycle;
         this.teleport = teleport;
         this.log = log;
     }
 
     /**
-     * 启动游戏流程控制并初始化大厅(注入 onEnable 已缓存配置,不读盘不注册模式)。
+     * 启动游戏流程控制并初始化大厅+开局周期(注入 onEnable 已缓存配置,不读盘不注册模式):
+     * 大厅先 open(周期起票广播读 present 账本),再 start 周期。
      *
      * @return true=本次完成启动;false=已在运行(幂等无副作用)
      */
@@ -60,13 +65,15 @@ public final class GameFlow {
         // 兜底清残留散场名单(正常路径 Dissolved 已消费;极端漏发时防止陈旧名单跨生命周期误传)
         this.pendingReturns.clear();
         this.lobby.open(this.lobbyConfig);
+        this.cycle.start();
         this.running = true;
         this.log.info("游戏流程已启动");
         return true;
     }
 
     /**
-     * 停止游戏流程控制:清大厅账本→枚举会话→逐成员 leaveSession(KICK 即时移除)→
+     * 停止游戏流程控制:先停开局周期(取消节拍任务+清票本/准备账本/判定核,此后无开局判定抢跑)→
+     * 清大厅账本→枚举会话→逐成员 leaveSession(KICK 即时移除)→
      * 第一段传送回 lobby.spawn(离线跳过)→记散场引导名单→翻转状态。
      * 会话实体随后由框架空场解散,收摊传送可能把在线玩家短暂拉往主世界出生点,
      * 最终落点由 onDissolved 第二段补传钉死在 lobby.spawn。
@@ -77,6 +84,8 @@ public final class GameFlow {
         if (!this.running) {
             return false;
         }
+        // 先停周期再关大厅:停周期时大厅仍开放(次序见证见 GameFlowTest),此后 enter 不记账
+        this.cycle.stop();
         // 先关大厅:此后 enter 不记账,传送回来的玩家不会误入账本
         this.lobby.close();
         int dissolvedSessions = 0;

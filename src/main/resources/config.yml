@@ -4,7 +4,6 @@
 # display 配置块已删除(表现层常量后续硬编码)。
 # 来源:2.5-大厅模式与最小闭环 §步骤9;README 对齐注⑩适用项
 
-# TODO(2.5): lobby 块默认模板(bounds/spawn/countdown/enable_ready/map_vote_setting/min-players),bounds 子结构同 mode_config 区域表示法 —— 出自 2.5-大厅模式与最小闭环 §步骤9
 lobby:
   # 大厅活动边界:世界名 + 区域表示法(与 mode_config 图配置同构,type=cube|sphere、form 二选一)
   bounds:
@@ -21,9 +20,10 @@ lobby:
     z: 0.5
     yaw: 0.0
     pitch: 0.0
-  # 开局倒计时(tick):开局条件(人数/全员准备)满足后再等多少 tick 正式开局
+  # 开局倒计时(tick):enable_ready=false 时人数门过即起倒计时、归零开局(凑人防抖窗口);
+  # enable_ready=true 时全员准备即当拍立即开局、不经倒计时(此键不参与该分支)
   countdown: 600
-  # 是否启用玩家准备(启用后须全员准备才开启倒计时)
+  # 是否启用玩家准备:true=人数门+全员已准备即立即开局(不经倒计时);false=人数门过即起倒计时开局
   enable_ready: false
   # 地图投票设置
   map_vote_setting:

@@ -17,12 +17,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * GameFlow 游戏流程开关测试(设计文档 §9 用例 1-15):状态机幂等可重入、stop 两段传送
  * (先 leaveSession 后第一段 toSpawn、Dissolved 后第二段补传、名单消费/未命中/残留清理)、
- * 多会话独立处理与逐会话容错、成员离线跳过。HydrokarbsApi 用桩基类、传送用记录假件
- * (二者共享调用序日志断言次序),LobbyManager 用真实例,LobbyConfig record 直接构造
- * (paper-api 测试类路径在案,Location 可直接 new)。
- * 服务端「有会话时 stop」全链因 createSession 尚未实装(仅 TODO)无法自然执行,由本组
- * stub sessions() 预置假会话覆盖(设计文档 §11 走查清单如实标注项)。
- * 出自 本次任务(shdf-launchstop-流程开关)设计文档 §9。
+ * 多会话独立处理与逐会话容错、成员离线跳过;周期联动(launch→cycle.start、stop→cycle.stop
+ * 先于 lobby.close、重复 launch/stop 不重复起停周期)出自 2.5 大厅逻辑。
+ * HydrokarbsApi 用桩基类、传送用记录假件(二者共享调用序日志断言次序),LobbyManager 用真实例,
+ * LobbyConfig record 直接构造(paper-api 测试类路径在案,Location 可直接 new);
+ * 开局周期用 RecordingCycle 记录假件(stop 时抓 lobby.isOpen 作「先停周期后关大厅」次序见证)。
+ * 服务端「有会话时 stop」全链由本组 stub sessions() 预置假会话覆盖(设计文档 §11 走查清单如实标注项)。
+ * 出自 本次任务(shdf-launchstop-流程开关)设计文档 §9;周期联动出自 2.5 大厅逻辑(04-大厅模式 §4.2/§4.3)。
  */
 class GameFlowTest {
 
@@ -38,9 +39,35 @@ class GameFlowTest {
                 new LobbyConfig.MapVoteSetting(true, 3), 2);
     }
 
-    /** 装配被测 GameFlow(真实 LobbyManager + 桩 API + 记录传送,均注入缓存配置)。 */
+    /** 装配被测 GameFlow(真实 LobbyManager + 周期记录假件 + 桩 API + 记录传送,均注入缓存配置)。 */
     private GameFlow newFlow(final LobbyConfig config, final StubHydrokarbsApi stub, final RecordingTeleport teleport) {
-        return new GameFlow(stub, config, new LobbyManager(), teleport, Logger.getLogger("GameFlowTest"));
+        final LobbyManager lobby = new LobbyManager(stub, teleport);
+        return new GameFlow(stub, config, lobby, new RecordingCycle(lobby), teleport, Logger.getLogger("GameFlowTest"));
+    }
+
+    /** MatchCycle 记录假件:no-op 行为+start/stop 计数;stop 时抓 lobby.isOpen 作「cycle.stop 先于 lobby.close」次序见证。 */
+    private static final class RecordingCycle implements MatchCycle {
+
+        private final LobbyManager lobby;
+        int startCount;
+        int stopCount;
+        boolean lobbyOpenAtStop = true;
+
+        RecordingCycle(final LobbyManager lobby) {
+            this.lobby = lobby;
+        }
+
+        @Override
+        public boolean start() {
+            this.startCount++;
+            return true;
+        }
+
+        @Override
+        public void stop() {
+            this.stopCount++;
+            this.lobbyOpenAtStop = this.lobby.isOpen();
+        }
     }
 
     private static int frequency(final List<String> log, final String entry) {
@@ -52,9 +79,10 @@ class GameFlowTest {
     @Test
     void launch_首次_开大厅置运行() {
         final LobbyConfig config = newConfig();
-        final LobbyManager lobby = new LobbyManager();
-        final GameFlow flow = new GameFlow(new StubHydrokarbsApi(null), config, lobby,
-                new RecordingTeleport(null), Logger.getLogger("GameFlowTest"));
+        final StubHydrokarbsApi stub = new StubHydrokarbsApi(null);
+        final RecordingTeleport teleport = new RecordingTeleport(null);
+        final LobbyManager lobby = new LobbyManager(stub, teleport);
+        final GameFlow flow = new GameFlow(stub, config, lobby, new RecordingCycle(lobby), teleport, Logger.getLogger("GameFlowTest"));
 
         assertTrue(flow.launch(), "首次 launch 应完成启动");
         assertTrue(flow.isRunning());
@@ -76,10 +104,10 @@ class GameFlowTest {
     @Test
     void stop_运行中_解散传送关大厅() {
         final LobbyConfig config = newConfig();
-        final LobbyManager lobby = new LobbyManager();
         final StubHydrokarbsApi stub = new StubHydrokarbsApi(this.calls);
         final RecordingTeleport teleport = new RecordingTeleport(this.calls);
-        final GameFlow flow = new GameFlow(stub, config, lobby, teleport, Logger.getLogger("GameFlowTest"));
+        final LobbyManager lobby = new LobbyManager(stub, teleport);
+        final GameFlow flow = new GameFlow(stub, config, lobby, new RecordingCycle(lobby), teleport, Logger.getLogger("GameFlowTest"));
         stub.setSessions(List.of(new FakeSessionHandle("s1", List.of(U1, U2))));
         flow.launch();
         lobby.enter(U3); // 大厅账本有残留,stop 应关账
@@ -200,7 +228,8 @@ class GameFlowTest {
         final LobbyConfig config = newConfig();
         final StubHydrokarbsApi stub = new StubHydrokarbsApi(this.calls);
         final RecordingTeleport teleport = new RecordingTeleport(this.calls);
-        final GameFlow flow = new GameFlow(stub, config, new LobbyManager(), teleport, Logger.getLogger("GameFlowTest"));
+        final LobbyManager lobby = new LobbyManager(stub, teleport);
+        final GameFlow flow = new GameFlow(stub, config, lobby, new RecordingCycle(lobby), teleport, Logger.getLogger("GameFlowTest"));
         stub.setSessions(List.of(new FakeSessionHandle("s1", List.of(U1, U2))));
         flow.launch();
         flow.stop();
@@ -278,5 +307,46 @@ class GameFlowTest {
 
         flow.onDissolved("s2");
         assertEquals(beforeStale + 1, teleport.teleported().size(), "本周期名单照常命中");
+    }
+
+    // ── 周期联动(MatchCycle 缝,2.5 大厅逻辑) ──
+
+    @Test
+    void launch_启动开局周期() {
+        final LobbyManager lobby = new LobbyManager(new StubHydrokarbsApi(null), new RecordingTeleport(null));
+        final RecordingCycle cycle = new RecordingCycle(lobby);
+        final GameFlow flow = new GameFlow(new StubHydrokarbsApi(null), newConfig(), lobby, cycle,
+                new RecordingTeleport(null), Logger.getLogger("GameFlowTest"));
+
+        assertTrue(flow.launch());
+        assertEquals(1, cycle.startCount, "launch 恰调一次 cycle.start");
+    }
+
+    @Test
+    void stop_先停周期后关大厅() {
+        final LobbyManager lobby = new LobbyManager(new StubHydrokarbsApi(this.calls), new RecordingTeleport(this.calls));
+        final RecordingCycle cycle = new RecordingCycle(lobby);
+        final GameFlow flow = new GameFlow(new StubHydrokarbsApi(this.calls), newConfig(), lobby, cycle,
+                new RecordingTeleport(this.calls), Logger.getLogger("GameFlowTest"));
+        flow.launch();
+
+        assertTrue(flow.stop());
+        assertEquals(1, cycle.stopCount, "stop 恰调一次 cycle.stop");
+        assertTrue(cycle.lobbyOpenAtStop, "cycle.stop 先于 lobby.close(停周期时大厅仍开放,无开局判定抢跑窗口)");
+    }
+
+    @Test
+    void 重复launch与stop_周期不重复起停() {
+        final LobbyManager lobby = new LobbyManager(new StubHydrokarbsApi(this.calls), new RecordingTeleport(this.calls));
+        final RecordingCycle cycle = new RecordingCycle(lobby);
+        final GameFlow flow = new GameFlow(new StubHydrokarbsApi(this.calls), newConfig(), lobby, cycle,
+                new RecordingTeleport(this.calls), Logger.getLogger("GameFlowTest"));
+
+        assertTrue(flow.launch());
+        assertFalse(flow.launch(), "重复 launch 幂等");
+        assertEquals(1, cycle.startCount, "cycle.start 不重复调");
+        assertTrue(flow.stop());
+        assertFalse(flow.stop(), "重复 stop 幂等");
+        assertEquals(1, cycle.stopCount, "cycle.stop 不重复调");
     }
 }
