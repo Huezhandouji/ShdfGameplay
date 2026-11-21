@@ -2,12 +2,15 @@ package com.shdfGameplay.session;
 
 import com.hydrokarbs.api.SessionRecipe;
 import com.shdfGameplay.component.MatchConfigComponent;
+import com.shdfGameplay.lang.Lang;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 /**
  * 会话配方注册处:modeId(mode_config/ 目录名)→ {@link SessionRecipe} 的进程级登记簿。
@@ -58,7 +61,8 @@ public final class SessionRecipes {
      */
     public SessionRecipe pinned(final String modeId, final String mapId, final MatchConfigComponent.Spec matchConfig) {
         final SessionRecipe template = find(modeId).orElseThrow(() ->
-                new IllegalStateException("模式未登记会话配方: " + modeId));
+                new IllegalStateException(Lang.plain("config.session.recipe_missing",
+                        Placeholder.unparsed("mode", modeId))));
         final var extras = new ArrayList<>(template.extraComponents());
         extras.add(matchConfig);
         return new SessionRecipe(modeId, Optional.of(mapId), template.mapPool(), List.copyOf(extras));

@@ -1,8 +1,10 @@
 package com.shdfGameplay.lobby;
 
 import com.shdfGameplay.config.GameConfigManager;
+import com.shdfGameplay.lang.Lang;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -10,14 +12,14 @@ import java.util.UUID;
 import java.util.random.RandomGenerator;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 /**
  * 大厅『下一场玩什么』投票状态机:起票抽样(禁投票抽 1 张直接用/开投票抽 mapAmount 张)、每人一票可改票、
  * 多数胜/平局 TieBreak.RANDOM(随机源注入可固定种子)、零票轮换兜底(fallbackOrder 稳定序 + consume 即推进指针);
  * 聊天候选行([n] mode@map + ClickEvent 执行 /shdf vote n)渲染归本类、发送归周期壳。
- * 纯宿主状态:零 org.bukkit 与零框架类型;候选行全 Component.text 链式构造不经 MiniMessage
- * (候选串来自服主配置,零玩家可控字符串注入面)。
+ * 纯宿主状态:零 org.bukkit 与零框架类型;候选行经 Lang.render 语言模板构造(lobby.vote.candidate_*),
+ * 候选串经 Placeholder.unparsed 注入(来自服主配置,零玩家可控字符串注入面)。
  * —— 出自 2.5 大厅逻辑(04-大厅模式 §4.2、§14.10;2.5 步骤3)。
  */
 public final class LobbyVote {
@@ -31,11 +33,15 @@ public final class LobbyVote {
     /** 当前轮候选(起票抽样定格;未起票/清票后为空)。 */
     private List<String> roundCandidates = List.of();
 
+    // 票本 LinkedHashMap:投票人按投票先后稳定序(ballotBoard 渲染投票人列表的序基础)
     /** 票本:投票人 → 候选序号(1-based);后投覆盖先投=可改票,清票/重起票即清。 */
-    private final Map<UUID, Integer> ballots = new HashMap<>();
+    private final Map<UUID, Integer> ballots = new LinkedHashMap<>();
 
     /** 轮换兜底指针:consume 即推进 +1 回绕;跨轮与清票持续(一 bootstrap 尝试一消费)。 */
     private int fallbackCursor;
+
+    /** 票本观察序号:候选集/票本任何有效变更 +1(单调递增;交互层差集刷新开着的投票菜单的变更信号)。 */
+    private long revision;
 
     /**
      * @param games  候选配置源(起票抽样池与轮换兜底序同源)
@@ -63,10 +69,12 @@ public final class LobbyVote {
         final int amount = pool.isEmpty() ? 0 : voteEnabled ? Math.min(mapAmount, pool.size()) : 1;
         this.roundCandidates = sample(pool, amount);
         this.ballots.clear();
+        this.revision++;
     }
 
     /**
      * 投票:本轮已起票且 1≤choice≤候选数才记,每人一票、后投覆盖先投(可改票);未起票/越界静默不记。
+     * 记票经 remove+put:改票者挪到票本队尾(票本序=当前票投出先后,ballotBoard 投票人列表序基础)。
      *
      * @param player 投票人
      * @param choice 候选序号(1-based,对应候选行 [n])
@@ -75,7 +83,9 @@ public final class LobbyVote {
         if (choice < 1 || choice > this.roundCandidates.size()) {
             return;
         }
+        this.ballots.remove(player);
         this.ballots.put(player, choice);
+        this.revision++;
     }
 
     /**
@@ -110,6 +120,27 @@ public final class LobbyVote {
         return Optional.of(this.roundCandidates.get(winner - 1));
     }
 
+    /**
+     * 票面看板(交互层渲染口,纯读非消费):候选序号(1-based 升序全覆盖)→ 该候选投票人列表
+     * (按当前票投出先后,castVote remove+put 票本序;零票候选映射空列表)。未起票为空表。
+     * 菜单物品 lore 的票数=列表长度、投票人=列表成员由此渲染,与 tally 计票同源不改票本。
+     */
+    public Map<Integer, List<UUID>> ballotBoard() {
+        final Map<Integer, List<UUID>> board = new LinkedHashMap<>();
+        for (int choice = 1; choice <= this.roundCandidates.size(); choice++) {
+            board.put(choice, new ArrayList<>());
+        }
+        for (final Map.Entry<UUID, Integer> ballot : this.ballots.entrySet()) {
+            board.get(ballot.getValue()).add(ballot.getKey());
+        }
+        return board;
+    }
+
+    /** 票本观察序号(单调递增;castVote/beginRound/clear/withdraw/withdrawMode 有效变更即 +1):交互层差集刷新信号。 */
+    public long revision() {
+        return this.revision;
+    }
+
     /** 零票轮换兜底顺序:games.all() 稳定序 mode@map(本工程无 rotation.yml,全量池即兜底序;实时读缓存,重载后随动)。 */
     public List<String> fallbackOrder() {
         return pool();
@@ -134,6 +165,7 @@ public final class LobbyVote {
     public void clear() {
         this.roundCandidates = List.of();
         this.ballots.clear();
+        this.revision++;
     }
 
     /**
@@ -151,6 +183,7 @@ public final class LobbyVote {
         remaining.remove(candidate);
         this.roundCandidates = List.copyOf(remaining);
         this.ballots.clear();
+        this.revision++;
     }
 
     /**
@@ -171,19 +204,22 @@ public final class LobbyVote {
         }
         this.roundCandidates = List.copyOf(remaining);
         this.ballots.clear();
+        this.revision++;
     }
 
     /**
      * 聊天候选行渲染(发送归周期壳:起票全员广播 + 新入场者差集补发,唯一口不在本类):
-     * 每行「[n] mode@map」,ClickEvent 执行 /shdf vote n;Component.text 链式构造不经 MiniMessage
-     * (候选串来自服主配置文件,零玩家可控字符串,无注入面)。
+     * 每行「[n] mode@map」,ClickEvent 执行 /shdf vote n;经 Lang.render 语言模板构造,
+     * 候选串经 Placeholder.unparsed 注入(来自服主配置文件,零玩家可控字符串,无注入面)。
      */
     public List<Component> candidateLines() {
         final List<Component> lines = new ArrayList<>();
         for (int i = 0; i < this.roundCandidates.size(); i++) {
             final int number = i + 1;
-            lines.add(Component.text("[" + number + "] ", NamedTextColor.GRAY)
-                    .append(Component.text(this.roundCandidates.get(i), NamedTextColor.AQUA))
+            lines.add(Lang.render("lobby.vote.candidate_prefix",
+                            Placeholder.unparsed("number", String.valueOf(number)))
+                    .append(Lang.render("lobby.vote.candidate_entry",
+                            Placeholder.unparsed("candidate", this.roundCandidates.get(i))))
                     .clickEvent(ClickEvent.runCommand("/shdf vote " + number)));
         }
         return lines;

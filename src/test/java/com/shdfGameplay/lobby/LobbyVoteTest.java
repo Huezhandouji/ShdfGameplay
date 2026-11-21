@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -276,5 +277,69 @@ class LobbyVoteTest {
             assertEquals(vote.candidates().get(i), ((TextComponent) line.children().get(0)).content(),
                     "候选段=mode@map(整行即 [n] mode@map)");
         }
+    }
+
+    // ── 票面看板与观察序号(交互层渲染/刷新口,本次任务·大厅交互层) ──
+
+    @Test
+    void 票面看板_候选序全覆盖_投票人按投票先后() {
+        final LobbyVote vote = new LobbyVote(threeMaps(), new Random(3L));
+
+        assertTrue(vote.ballotBoard().isEmpty(), "未起票:看板恒空");
+
+        vote.beginRound(true, 3);
+        assertEquals(Set.of(1, 2, 3), vote.ballotBoard().keySet(), "起票后:候选序 1..N 全覆盖(零票候选含空列表)");
+        vote.ballotBoard().values().forEach(voters -> assertTrue(voters.isEmpty(), "零票候选映射空列表"));
+
+        vote.castVote(P1, 1);
+        vote.castVote(P2, 2);
+        vote.castVote(P3, 1);
+        assertEquals(List.of(P1, P3), vote.ballotBoard().get(1), "1 号候选投票人按投票先后(P1 先 P3 后)");
+        assertEquals(List.of(P2), vote.ballotBoard().get(2));
+        assertTrue(vote.ballotBoard().get(3).isEmpty(), "零票候选空列表");
+        assertEquals(2, vote.ballotBoard().get(1).size(), "票数=列表长度(菜单 lore 票数口径)");
+
+        vote.castVote(P1, 2); // P1 改票:1 号失一票、2 号得票且 P1 排 P2 后(改票时刻为新投票时刻)
+        assertEquals(List.of(P3), vote.ballotBoard().get(1), "改票后旧候选失票");
+        assertEquals(List.of(P2, P1), vote.ballotBoard().get(2), "改票者按改票时刻排到该候选队尾");
+    }
+
+    @Test
+    void 摘除候选_票面看板随新序重排() {
+        final LobbyVote vote = new LobbyVote(threeMaps(), new Random(3L));
+        vote.beginRound(true, 3);
+        final String dead = vote.candidates().get(0);
+        vote.castVote(P1, 1);
+
+        vote.withdraw(dead);
+        assertEquals(Set.of(1, 2), vote.ballotBoard().keySet(), "摘除后看板键随新候选序收紧");
+        vote.ballotBoard().values().forEach(voters -> assertTrue(voters.isEmpty(), "票本随摘除清空:全候选零票"));
+    }
+
+    @Test
+    void 观察序号_有效变更即推进_无效操作不动() {
+        final LobbyVote vote = new LobbyVote(threeMaps(), new Random(3L));
+        assertEquals(0L, vote.revision(), "初始为 0");
+
+        vote.castVote(P1, 1);
+        assertEquals(0L, vote.revision(), "未起票投票不记:序号不动");
+
+        vote.beginRound(true, 3);
+        final long afterBegin = vote.revision();
+        assertEquals(1L, afterBegin, "起票(候选定格+清票)有效变更:+1");
+
+        vote.castVote(P1, 1);
+        vote.castVote(P1, 2);
+        assertEquals(afterBegin + 2, vote.revision(), "两次有效记票(含改票):再 +2");
+
+        vote.castVote(P1, 99);
+        assertEquals(afterBegin + 2, vote.revision(), "越界记票无效:序号不动");
+
+        vote.clear();
+        assertEquals(afterBegin + 3, vote.revision(), "清票:+1");
+
+        vote.withdraw("tdm@map9");
+        vote.withdrawMode("conquest");
+        assertEquals(afterBegin + 3, vote.revision(), "不在本轮的摘除为无操作:序号不动");
     }
 }

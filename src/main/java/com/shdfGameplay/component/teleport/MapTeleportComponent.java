@@ -4,6 +4,8 @@ import com.hydrokarbs.engine.component.MatchModeComponent;
 import com.hydrokarbs.engine.event.MatchModeInstanceEvent;
 import com.hydrokarbs.engine.instance.Participant;
 import com.hydrokarbs.engine.port.MatchModeInstanceServices;
+import com.shdfGameplay.lang.Lang;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -90,7 +92,8 @@ public final class MapTeleportComponent extends MatchModeComponent {
         final String worldName = svc().self().map().id() + "-" + svc().self().session().id().shortCode();
         final World world = Bukkit.getWorld(worldName);
         if (world == null) {
-            Bukkit.getLogger().warning("副本世界未就绪,跳过传送:" + worldName);
+            Bukkit.getLogger().warning(Lang.plain("log.config.instance_world_not_ready",
+                    Placeholder.unparsed("world", worldName)));
         }
         return world;
     }

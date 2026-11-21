@@ -1,5 +1,7 @@
 package com.shdfGameplay.config;
 
+import com.shdfGameplay.lang.Lang;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -10,6 +12,8 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
+
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 /**
  * 首启资源释放器:枚举插件 jar 全部随包资源,逐文件拷至宿主数据目录(目录结构与 jar 内一致),
@@ -50,14 +54,23 @@ public final class DefaultResources {
                     .filter(entry -> !shouldSkip(entry))
                     .forEach(entry -> outcomes.add(copyIfAbsent(jar, entry, dataDir.resolve(entry.getName()))));
         } catch (final IOException e) {
-            throw new IllegalStateException("插件 jar 读取失败,资源释放中止: " + pluginJar, e);
+            throw new IllegalStateException(Lang.plain("config.resources.jar_read_failed",
+                    Placeholder.unparsed("file", String.valueOf(pluginJar))), e);
         }
         final long copied = outcomes.stream().filter(outcome -> outcome == Outcome.COPIED).count();
         final long skipped = outcomes.stream().filter(outcome -> outcome == Outcome.ALREADY_PRESENT).count();
         final long failed = outcomes.stream().filter(outcome -> outcome == Outcome.FAILED).count();
         if (copied > 0 || failed > 0) {
-            LOGGER.info("默认资源释放完成:新拷贝 " + copied + " 个,已存在跳过 " + skipped + " 个"
-                    + (failed > 0 ? ",失败 " + failed + " 个(各失败项已另行 warning)" : ""));
+            if (failed > 0) {
+                LOGGER.info(Lang.plain("log.config.resources.released_with_failures",
+                        Placeholder.unparsed("copied", String.valueOf(copied)),
+                        Placeholder.unparsed("skipped", String.valueOf(skipped)),
+                        Placeholder.unparsed("failed", String.valueOf(failed))));
+            } else {
+                LOGGER.info(Lang.plain("log.config.resources.released",
+                        Placeholder.unparsed("copied", String.valueOf(copied)),
+                        Placeholder.unparsed("skipped", String.valueOf(skipped))));
+            }
         }
     }
 
@@ -83,7 +96,8 @@ public final class DefaultResources {
         }
         try (InputStream in = jar.getInputStream(entry)) {
             if (in == null) {
-                LOGGER.warning("资源释放失败(条目流缺席,跳过): " + entry.getName());
+                LOGGER.warning(Lang.plain("log.config.resources.entry_stream_missing",
+                        Placeholder.unparsed("entry", entry.getName())));
                 return Outcome.FAILED;
             }
             if (target.getParent() != null) {
@@ -92,7 +106,9 @@ public final class DefaultResources {
             Files.copy(in, target);
             return Outcome.COPIED;
         } catch (final IOException e) {
-            LOGGER.warning("资源释放失败(跳过): " + target + " - " + e.getMessage());
+            LOGGER.warning(Lang.plain("log.config.resources.copy_failed",
+                    Placeholder.unparsed("target", String.valueOf(target)),
+                    Placeholder.unparsed("error", String.valueOf(e.getMessage()))));
             return Outcome.FAILED;
         }
     }

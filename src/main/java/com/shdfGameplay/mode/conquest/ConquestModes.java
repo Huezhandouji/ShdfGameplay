@@ -4,9 +4,8 @@ import com.hydrokarbs.engine.AttributeBag;
 import com.hydrokarbs.engine.mode.MatchMode;
 import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.mode.MatchModeProvider;
-import com.hydrokarbs.engine.session.MatchModeConfig;
 import com.shdfGameplay.component.teleport.MapTeleportComponent;
-import net.kyori.adventure.text.Component;
+import com.shdfGameplay.lang.Lang;
 import org.bukkit.Material;
 
 import java.util.Set;
@@ -29,10 +28,9 @@ public final class ConquestModes implements MatchModeProvider {
     }
 
     @Override
-    public MatchMode build(final MatchModeConfig cfg) {
-        // cfg 形参忽略(框架 modes/<id>.yml 对宿主模式缺省空配置)
+    public MatchMode build() {
         return new MatchMode.Builder(id())
-                .displayName(Component.text("占领战"))
+                .displayName(Lang.render("mode.conquest.name"))
                 .icon(Material.BEACON)
                 .mapTags(Set.of())
                 .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), false, 1, 24).build())

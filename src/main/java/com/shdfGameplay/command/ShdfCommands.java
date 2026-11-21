@@ -5,6 +5,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.shdfGameplay.config.LobbyConfig;
+import com.shdfGameplay.lang.Lang;
 import com.shdfGameplay.lobby.GameFlow;
 import com.shdfGameplay.lobby.LobbyManager;
 import com.shdfGameplay.lobby.LobbyTeleport;
@@ -15,8 +16,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import java.util.List;
 import java.util.UUID;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -52,7 +52,7 @@ public final class ShdfCommands {
                                 final LobbyConfig config, final LobbyTeleport teleport) {
         plugin.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event ->
                 event.registrar().register(root(flow, lobby, vote, ready, hk, config, teleport),
-                        "SHDF 游戏流程主命令", List.of()));
+                        Lang.plain("command.root.description"), List.of()));
     }
 
     /** /shdf 根节点(无 requires):launch/stop 各挂权限,玩家四子命令不挂权限保持开放。 */
@@ -66,10 +66,10 @@ public final class ShdfCommands {
                         .executes(context -> {
                             if (flow.launch()) {
                                 context.getSource().getSender().sendMessage(
-                                        Component.text("游戏流程已启动,大厅运行中", NamedTextColor.GREEN));
+                                        Lang.render("command.launch.started"));
                             } else {
                                 context.getSource().getSender().sendMessage(
-                                        Component.text("游戏流程已在运行中,无需重复启动", NamedTextColor.YELLOW));
+                                        Lang.render("command.launch.already_running"));
                             }
                             return Command.SINGLE_SUCCESS;
                         }))
@@ -78,10 +78,10 @@ public final class ShdfCommands {
                         .executes(context -> {
                             if (flow.stop()) {
                                 context.getSource().getSender().sendMessage(
-                                        Component.text("游戏流程已停止,会话已解散,玩家已送回大厅", NamedTextColor.GREEN));
+                                        Lang.render("command.stop.stopped"));
                             } else {
                                 context.getSource().getSender().sendMessage(
-                                        Component.text("游戏流程未在运行", NamedTextColor.YELLOW));
+                                        Lang.render("command.stop.not_running"));
                             }
                             return Command.SINGLE_SUCCESS;
                         }))
@@ -107,18 +107,18 @@ public final class ShdfCommands {
                         return Command.SINGLE_SUCCESS;
                     }
                     if (!flow.isRunning()) {
-                        player.sendMessage(Component.text("游戏流程未运行", NamedTextColor.YELLOW));
+                        player.sendMessage(Lang.render("command.lobby.not_running"));
                         return Command.SINGLE_SUCCESS;
                     }
                     if (hk.sessionOf(player.getUniqueId()).isPresent()) {
-                        player.sendMessage(Component.text("正在对局中,请先 /shdf leave 离场", NamedTextColor.YELLOW));
+                        player.sendMessage(Lang.render("command.lobby.in_session"));
                         return Command.SINGLE_SUCCESS;
                     }
                     if (teleport.toSpawn(player.getUniqueId(), config.spawn())) {
                         lobby.enter(player.getUniqueId());
-                        player.sendMessage(Component.text("已进入大厅", NamedTextColor.GREEN));
+                        player.sendMessage(Lang.render("command.lobby.entered"));
                     } else {
-                        player.sendMessage(Component.text("大厅传送失败,请稍后再试", NamedTextColor.RED));
+                        player.sendMessage(Lang.render("command.lobby.teleport_failed"));
                     }
                     return Command.SINGLE_SUCCESS;
                 })
@@ -127,8 +127,10 @@ public final class ShdfCommands {
 
     /** /shdf vote <n>:大厅在场才可投;序号 1 起(IntegerArgumentType 下界),越界红字;记票可改票(绿字回执同口径)。 */
     private static LiteralCommandNode<CommandSourceStack> voteNode(final LobbyManager lobby, final LobbyVote vote) {
+        // 参数名 i18n:树构建时 Lang.plain 取值一次存局部常量,argument 注册与 getInteger 取参两处复用(同键同值)
+        final String argName = Lang.plain("command.vote.arg");
         return Commands.literal("vote")
-                .then(Commands.argument("序号", IntegerArgumentType.integer(1))
+                .then(Commands.argument(argName, IntegerArgumentType.integer(1))
                         .executes(context -> {
                             final Player player = playerOf(context.getSource());
                             if (player == null) {
@@ -136,19 +138,20 @@ public final class ShdfCommands {
                             }
                             final UUID uuid = player.getUniqueId();
                             if (!lobby.present().contains(uuid)) {
-                                player.sendMessage(Component.text("不在大厅内,无法投票", NamedTextColor.RED));
+                                player.sendMessage(Lang.render("lobby.vote.not_in_lobby"));
                                 return Command.SINGLE_SUCCESS;
                             }
-                            final int choice = IntegerArgumentType.getInteger(context, "序号");
+                            final int choice = IntegerArgumentType.getInteger(context, argName);
                             final List<String> candidates = vote.candidates();
                             if (choice > candidates.size()) {
-                                player.sendMessage(Component.text("候选序号越界(当前候选 " + candidates.size() + " 张)",
-                                        NamedTextColor.RED));
+                                player.sendMessage(Lang.render("lobby.vote.out_of_range",
+                                        Placeholder.unparsed("count", String.valueOf(candidates.size()))));
                                 return Command.SINGLE_SUCCESS;
                             }
                             vote.castVote(uuid, choice);
-                            player.sendMessage(Component.text("已投:[" + choice + "] " + candidates.get(choice - 1),
-                                    NamedTextColor.GREEN));
+                            player.sendMessage(Lang.render("lobby.vote.cast",
+                                    Placeholder.unparsed("choice", String.valueOf(choice)),
+                                    Placeholder.unparsed("candidate", candidates.get(choice - 1))));
                             return Command.SINGLE_SUCCESS;
                         }))
                 .build();
@@ -165,16 +168,17 @@ public final class ShdfCommands {
                     }
                     final UUID uuid = player.getUniqueId();
                     if (!lobby.present().contains(uuid)) {
-                        player.sendMessage(Component.text("不在大厅内,无法准备", NamedTextColor.RED));
+                        player.sendMessage(Lang.render("lobby.ready.not_in_lobby"));
                         return Command.SINGLE_SUCCESS;
                     }
                     if (!config.enableReady()) {
-                        player.sendMessage(Component.text("准备功能未启用", NamedTextColor.YELLOW));
+                        player.sendMessage(Lang.render("lobby.ready.disabled"));
                         return Command.SINGLE_SUCCESS;
                     }
                     final boolean nowReady = !ready.isReady(uuid);
                     ready.setReady(uuid, nowReady);
-                    player.sendMessage(Component.text(nowReady ? "已准备" : "已取消准备", NamedTextColor.GREEN));
+                    player.sendMessage(nowReady ? Lang.render("lobby.ready.toggle_on")
+                            : Lang.render("lobby.ready.toggle_off"));
                     return Command.SINGLE_SUCCESS;
                 })
                 .build();
@@ -189,9 +193,9 @@ public final class ShdfCommands {
                         return Command.SINGLE_SUCCESS;
                     }
                     if (hk.leaveSession(player.getUniqueId())) {
-                        player.sendMessage(Component.text("已离场,正在返回大厅", NamedTextColor.GREEN));
+                        player.sendMessage(Lang.render("command.leave.left"));
                     } else {
-                        player.sendMessage(Component.text("不在任何对局中", NamedTextColor.YELLOW));
+                        player.sendMessage(Lang.render("command.leave.not_in_session"));
                     }
                     return Command.SINGLE_SUCCESS;
                 })
@@ -203,7 +207,7 @@ public final class ShdfCommands {
         if (source.getSender() instanceof Player player) {
             return player;
         }
-        source.getSender().sendMessage(Component.text("该命令仅玩家可用", NamedTextColor.RED));
+        source.getSender().sendMessage(Lang.render("command.player_only"));
         return null;
     }
 }

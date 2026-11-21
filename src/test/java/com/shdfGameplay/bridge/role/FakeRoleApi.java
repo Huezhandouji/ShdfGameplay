@@ -5,7 +5,6 @@ import com.shadowHunterRolesPlugin.api.RoleEventSubscription;
 import com.shadowHunterRolesPlugin.api.RoleInfo;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 
 import java.util.ArrayList;
@@ -63,12 +62,6 @@ public final class FakeRoleApi implements RoleAPI {
     /** clearPlayerRole 回值(默认 false)。 */
     public boolean clearRoleResult = false;
 
-    /** getLastDamagerUuid 回值(默认 null)。 */
-    public UUID lastDamagerUuidResult = null;
-
-    /** getLastDamager 回值(默认 null)。 */
-    public Player lastDamagerPlayerResult = null;
-
     // ── operate 面:可配置应答 + 调用记录 ──────────────────────────────
 
     /** operate 应答器:入参为调用三元组,回值即 executeComponentOperation 返回(默认 null=未识别/拒绝)。 */
@@ -106,16 +99,8 @@ public final class FakeRoleApi implements RoleAPI {
     }
 
     // ── 查询/写面直通可配置返回值 ─────────────────────────────────────
-
-    @Override
-    public UUID getLastDamagerUuid(Player player) {
-        return lastDamagerUuidResult;
-    }
-
-    @Override
-    public Player getLastDamager(Player player) {
-        return lastDamagerPlayerResult;
-    }
+    // (击杀归属读口已不在冻结面:角色插件删 getLastDamager*,归属改在伤害侧 setKiller 记账,
+    //  RoleFacade.lastDamagerUuid/lastDamager 直读原版 getKiller,不经本桩。)
 
     @Override
     public boolean isValidRoleId(String id) {

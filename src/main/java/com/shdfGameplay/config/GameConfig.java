@@ -1,11 +1,14 @@
 package com.shdfGameplay.config;
 
+import com.shdfGameplay.lang.Lang;
+
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -36,17 +39,21 @@ public record GameConfig(String modeId, String mapId, Path mapPath, String displ
     public static GameConfig from(final String modeId, final Path file) {
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file.toFile());
         if (yaml.getKeys(false).isEmpty()) {
-            throw new IllegalStateException("mode_config 解析失败(空文件或语法错误): " + file);
+            throw new IllegalStateException(Lang.plain("config.map.parse_failed",
+                    Placeholder.unparsed("file", String.valueOf(file))));
         }
         final String mapPathRaw = yaml.getString("map_path");
         if (mapPathRaw == null || mapPathRaw.isBlank()) {
-            throw new IllegalStateException("mode_config 缺 map_path 键: " + file);
+            throw new IllegalStateException(Lang.plain("config.map.map_path_missing",
+                    Placeholder.unparsed("file", String.valueOf(file))));
         }
         final Path mapPath;
         try {
             mapPath = Path.of(mapPathRaw);
         } catch (final InvalidPathException e) {
-            throw new IllegalStateException("mode_config map_path 非法路径: " + mapPathRaw + " @ " + file, e);
+            throw new IllegalStateException(Lang.plain("config.map.map_path_invalid",
+                    Placeholder.unparsed("path", mapPathRaw),
+                    Placeholder.unparsed("file", String.valueOf(file))), e);
         }
         final String mapId = stripExtension(file.getFileName().toString());
         final ConfigurationSection metadata = yaml.getConfigurationSection("metadata");

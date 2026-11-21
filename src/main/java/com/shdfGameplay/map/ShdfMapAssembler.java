@@ -14,6 +14,9 @@ import java.util.Map;
 
 import com.shdfGameplay.config.GameConfig;
 import com.shdfGameplay.config.GameConfigManager;
+import com.shdfGameplay.lang.Lang;
+
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -51,7 +54,8 @@ public final class ShdfMapAssembler {
         for (final Map.Entry<Path, List<GameConfig>> entry : byWorld.entrySet()) {
             final Path worldDir = entry.getKey();
             if (!Files.isDirectory(worldDir)) {
-                throw new IllegalStateException("地图世界目录未落盘(先落盘后注册): " + worldDir);
+                throw new IllegalStateException(Lang.plain("config.map.world_dir_missing",
+                        Placeholder.unparsed("dir", String.valueOf(worldDir))));
             }
             registered.add(hk.registerMap(plugin,
                     new MapDefinition(worldDir, DEFAULT_RESET_STRATEGY, AttributeBag.empty())));

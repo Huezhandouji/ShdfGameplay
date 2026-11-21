@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * RoleFacade 防腐层契约测试:照施工计划3.1「测试与验收」10 组断言逐组写全(懒解析/缺席语义/roleIcon AIR/
  * catalog 转换+四字段无阵营/阵营读方向/阵营写方向/areHostile 四态/invalidate 重取/1:1 完整性反射/operate 透传真值),
- * 外加第 15 方法订阅面的行为补充(翻译/未知跳过/close 幂等/缺席登记与 reload 换代补订)。
+ * 外加订阅面的行为补充(翻译/未知跳过/close 幂等/缺席登记与 reload 换代补订)。
  * 只用包私有 Supplier 构造缝注入假 API(FakeRoleApi),离线可跑、不碰 Bukkit 静态门。
  * 出自 施工计划3.1 测试与验收 10 组;08-角色桥接 §8.2/§8.8/§8.10;角色插件 RoleAPI#subscribeEvents 合约。
  */
@@ -109,8 +109,8 @@ class RoleFacadeContractTest {
         assertNull(facade.playerRoleDisplayName(u));
         assertNull(facade.operate(u, "energy", "current"));
         assertFalse(facade.isValidRole("red"));
-        assertNull(facade.lastDamagerUuid(null));
-        assertNull(facade.lastDamager(null));
+        assertNull(facade.lastDamagerUuid(null), "击杀归属读口 null 受害者防御(读原版 getKiller,不经 RoleAPI)");
+        assertNull(facade.lastDamager(null), "备用读口同 null 防御");
         assertEquals(1, lookup.calls(), "null 也缓存:缺席只解析一次,不打第二遍 ServicesManager");
     }
 
@@ -264,13 +264,13 @@ class RoleFacadeContractTest {
         assertEquals(3, lookup.calls());
     }
 
-    // ── 组9 1:1 完整性:反射列公开方法对照 §8.10(一) 14 行+订阅面+阵营五动词,防漏写备用 lastDamager ──
+    // ── 组9 1:1 完整性:反射列公开方法对照 §8.10(一)镜像行+订阅面+阵营五动词+击杀归属两读口 ──
 
     @Test
     void 反射_公开面齐全且无自造方法() throws NoSuchMethodException {
         Class<RoleFacade> c = RoleFacade.class;
 
-        // 14 个 1:1 映射(§8.10(一)逐行;参数类型逐字)
+        // 12 个 1:1 映射(§8.10(一)逐行;参数类型逐字)
         assertNotNull(c.getMethod("knownRoleIds"));
         assertNotNull(c.getMethod("catalog"));
         assertNotNull(c.getMethod("isValidRole", String.class));
@@ -282,11 +282,13 @@ class RoleFacadeContractTest {
         assertNotNull(c.getMethod("playerRoleDisplayName", UUID.class));
         assertNotNull(c.getMethod("setRole", UUID.class, String.class));
         assertNotNull(c.getMethod("clearRole", UUID.class));
-        assertNotNull(c.getMethod("lastDamagerUuid", Player.class), "防漏写第 12 行(参数必须 Player)");
-        assertNotNull(c.getMethod("lastDamager", Player.class), "防漏写第 13 个备用方法");
         assertNotNull(c.getMethod("operate", UUID.class, String.class, String.class));
 
-        // 第 15 方法订阅面 + 阵营五动词(经 operate 的类型化面)
+        // 击杀归属两读口(本地桥,非 RoleAPI 镜像:角色插件已删 getLastDamager*,读原版 getKiller)
+        assertNotNull(c.getMethod("lastDamagerUuid", Player.class), "参数必须 Player");
+        assertNotNull(c.getMethod("lastDamager", Player.class), "备用读口");
+
+        // 订阅面 + 阵营五动词(经 operate 的类型化面)
         assertNotNull(c.getMethod("subscribeRoleEvents", Consumer.class));
         assertNotNull(c.getMethod("playerFaction", UUID.class));
         assertNotNull(c.getMethod("declaredFaction", UUID.class));
@@ -328,7 +330,7 @@ class RoleFacadeContractTest {
         assertEquals("", facade.operate(u, "sante", "current"), "空串返回也原样透传");
     }
 
-    // ── 补充:第 15 方法订阅面行为(施工计划3.1 步骤6 订阅面;角色插件 RoleAPI#subscribeEvents 合约)──
+    // ── 补充:订阅面行为(施工计划3.1 步骤6 订阅面;角色插件 RoleAPI#subscribeEvents 合约)──
 
     @Test
     void 订阅面_翻译三已知种_未知静默跳过_close幂等() {

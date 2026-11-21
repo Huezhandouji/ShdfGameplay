@@ -23,7 +23,7 @@
 > 来源:08-角色桥接 §8.1/§8.2/§8.8/§8.10;角色插件 RoleAPI#subscribeEvents 事件订阅面;
 > 施工计划 3.1-RoleFacade防腐层;README 对齐注①(宿主独立顶级包映射)适用。
 
-补充细节:公开面原为「15 方法 = 原 14 方法(含备用 lastDamager)+ 事件订阅面 subscribeEvents」。
+补充细节:公开面原为「15 方法 = 原 14 方法(含备用 lastDamager)+ 事件订阅面 subscribeEvents」;角色插件删除 getLastDamagerUuid/getLastDamager 后冻结面为 13 方法,防腐层保留 lastDamagerUuid/lastDamager 两读口改读原版 getKiller(角色插件伤害侧 setKiller 记账,缺席也照读)。
 
 ---
 

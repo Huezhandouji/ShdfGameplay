@@ -7,6 +7,7 @@ import com.shdfGameplay.component.MatchConfigComponent;
 import com.shdfGameplay.config.GameConfig;
 import com.shdfGameplay.config.GameConfigManager;
 import com.shdfGameplay.config.SpecificConfigParsers;
+import com.shdfGameplay.lang.Lang;
 import com.shdfGameplay.session.SessionRecipes;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,6 +17,7 @@ import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 /**
  * 开局单闸:五门序判定(人数→票选→地图→模式→角色,04 §4.3 门表)全过后解析玩法专用配置,
@@ -85,12 +87,14 @@ public final class MatchBootstrap {
         // 门一·人数:不足继续等(04 §4.3 门表「继续等/重新起票」口径)
         if (participants.size() < this.minPlayers) {
             return new BootstrapResult(null,
-                    List.of("人数不足:" + participants.size() + " < " + this.minPlayers + "(继续等)"));
+                    List.of(Lang.plain("lobby.bootstrap.min_players",
+                            Placeholder.unparsed("present", String.valueOf(participants.size())),
+                            Placeholder.unparsed("required", String.valueOf(this.minPlayers)))));
         }
         // 门二·票选:计票多数胜,零票走轮换兜底;两者皆空=本轮不开局重新起票
         final Optional<String> chosen = this.vote.tally().or(this.vote::nextFallback);
         if (chosen.isEmpty()) {
-            return new BootstrapResult(null, List.of("零票且无轮换兜底,本轮不开局(重新起票)"));
+            return new BootstrapResult(null, List.of(Lang.plain("lobby.bootstrap.no_candidate")));
         }
         final String candidate = chosen.get();
         final int sep = candidate.indexOf(CANDIDATE_SEP);
@@ -107,24 +111,28 @@ public final class MatchBootstrap {
         if (!mapPresent) {
             // 门表自愈落地:摘除该失败候选并清票本重收(04 §4.3 门表「摘除候选重收票」——恢复动作随拒收真实执行,非仅文案)
             this.vote.withdraw(candidate);
-            return new BootstrapResult(null, List.of("目标地图未注册:" + candidate + "(摘除候选重收票)"));
+            return new BootstrapResult(null,
+                    List.of(Lang.plain("lobby.bootstrap.map_missing", Placeholder.unparsed("candidate", candidate))));
         }
         // 门四·模式:缺席属装配事故,SEVERE 记日志并不开局(不建会话)
         if (this.hk.mode(modeId).isEmpty()) {
-            LOGGER.severe("开局模式未注册(装配事故:registerMode 集与会话配方登记集一致性被破坏):" + modeId);
-            return new BootstrapResult(null, List.of("开局模式未注册:" + modeId + "(装配事故,详见 SEVERE 日志)"));
+            LOGGER.severe(Lang.plain("log.lobby.mode_missing_severe", Placeholder.unparsed("mode", modeId)));
+            return new BootstrapResult(null,
+                    List.of(Lang.plain("lobby.bootstrap.mode_missing", Placeholder.unparsed("mode", modeId))));
         }
         // 门五·角色在场(按玩法):缺席摘除该玩法候选,大厅照常(2.5 注入恒真占位,按玩法判定的真实现随 3.5 角色玩法
         // 换入——04 §4.7 不陪葬:角色插件缺席不得陪葬无角色需求的模式开局)
         if (!this.rolePresence.getAsBoolean()) {
             // 门表自愈落地:摘除该玩法全部候选并清票本(04 §4.3 门表「摘除该玩法候选,大厅照常」)
             this.vote.withdrawMode(modeId);
-            return new BootstrapResult(null, List.of("角色系统不在场:" + modeId + "(摘除该玩法候选,大厅照常)"));
+            return new BootstrapResult(null,
+                    List.of(Lang.plain("lobby.bootstrap.role_missing", Placeholder.unparsed("mode", modeId))));
         }
         // 过门回查图配置:票选候选应恒在标记点名录内,缺席即不开局(防御口径)
         final Optional<GameConfig> config = this.games.find(modeId, mapId);
         if (config.isEmpty()) {
-            return new BootstrapResult(null, List.of("图配置缺席:" + candidate + "(检查 mode_config 标记文件)"));
+            return new BootstrapResult(null,
+                    List.of(Lang.plain("lobby.bootstrap.config_missing", Placeholder.unparsed("candidate", candidate))));
         }
         // 玩法专用配置解析:带病响亮捕作 rejection,全员留大厅不开局(数据面软失败,人读可恢复)
         Record parsed = null;
@@ -133,7 +141,9 @@ public final class MatchBootstrap {
             try {
                 parsed = parser.get().parseRawGameConfig(config.get());
             } catch (final IllegalStateException e) {
-                return new BootstrapResult(null, List.of("玩法配置解析失败:" + e.getMessage() + "(全员留大厅)"));
+                return new BootstrapResult(null,
+                        List.of(Lang.plain("lobby.bootstrap.parse_failed",
+                                Placeholder.unparsed("reason", String.valueOf(e.getMessage())))));
             }
         }
         // 组装钉图配方:静态模板(空场解散组件在前)+追加本局配置组件(在后),严防组件双挂
@@ -145,7 +155,9 @@ public final class MatchBootstrap {
         final List<String> rejections = new ArrayList<>();
         for (final UUID participant : participants) {
             if (handle.join(participant) instanceof JoinResult.Rejected rej) {
-                rejections.add(participant + ":" + rej.detail());
+                rejections.add(Lang.plain("lobby.bootstrap.join_rejected",
+                        Placeholder.unparsed("player", participant.toString()),
+                        Placeholder.unparsed("detail", String.valueOf(rej.detail()))));
             } else {
                 this.ledgerRemove.accept(participant);
             }

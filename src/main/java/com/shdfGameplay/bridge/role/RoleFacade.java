@@ -20,7 +20,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * 角色系统防腐层唯一类:全工程唯一允许 import 角色插件之处,公开面照自有名 1:1 覆盖 RoleAPI 冻结面 15 方法。
+ * 角色系统防腐层唯一类:全工程唯一允许 import 角色插件之处,公开面照自有名 1:1 覆盖 RoleAPI 冻结面 13 方法
+ * +击杀归属两读口(本地桥:角色插件已删旧法 getLastDamagerUuid/getLastDamager,改在伤害侧 setKiller 记账,读口=原版 getKiller)。
  * 纪律:签名只用 JDK/Bukkit/Adventure 类型(升级只改本文件);全部方法只准主线程调用;
  * 懒解析 null 也缓存、失效只经 {@link #invalidate()};缺席读回空值/写回 false,全类不抛。
  */
@@ -85,7 +86,7 @@ public final class RoleFacade {
         return api;
     }
 
-    /** 桥接生命周期方法(不计入 15 方法对照表,3.1:103):清空 api 缓存并恢复事件订阅;只由服务注册/注销事件驱动。 */
+    /** 桥接生命周期方法(不计入 13 方法对照表,3.1:103):清空 api 缓存并恢复事件订阅;只由服务注册/注销事件驱动。 */
     public void invalidate() {
         for (Registration reg : registrations) {
             unsubscribeQuietly(reg.token);     // ①旧令牌随角色插件 disable 作废,退订无害幂等
@@ -96,7 +97,7 @@ public final class RoleFacade {
         ensureApi();                           // ③立即懒解析一次:取到新实例则全量补订,事件流只断在角色插件 disable→enable 窗口内
     }
 
-    // ── 事件订阅面(第 15 方法:角色插件正式事件流,宿主侧死亡自探测的替代)──────────
+    // ── 事件订阅面(角色插件正式事件流,宿主侧死亡自探测的替代)──────────
 
     /**
      * → api.subscribeEvents(Consumer&lt;Event&gt;):订阅角色插件事件流并翻译为宿主词汇 {@link RoleSignal}——
@@ -115,7 +116,7 @@ public final class RoleFacade {
         return new RoleEventHandle(this, reg);
     }
 
-    /** 桥接生命周期方法(不计入 15 方法对照表,3.1:103):角色系统在场探测(ensureApi() != null 口径,3.3 能力探测口)。 */
+    /** 桥接生命周期方法(不计入 13 方法对照表,3.1:103):角色系统在场探测(ensureApi() != null 口径,3.3 能力探测口)。 */
     public boolean available() {
         return ensureApi() != null;
     }
@@ -252,16 +253,19 @@ public final class RoleFacade {
 
     // ── 击杀归属(§14.4)────────────────────────────────────────────
 
-    /** → api.getLastDamagerUuid(Player);击杀归属唯一正解,禁 player.getKiller();参数必须是 Player(禁加 LivingEntity 重载)。 */
+    /**
+     * 击杀归属唯一正解:读原版 victim.getKiller()。角色插件已删 RoleAPI#getLastDamagerUuid,改为伤害侧统一记账——
+     * 原版玩家互伤原版自记、无来源伤害由其 DamageUtil 施加前 setKiller 补写、爆炸/弹射物经 DamageSource 由原版结算记账。
+     * ★不经 RoleAPI(角色插件缺席也照读);getKiller 直呼全仓只许住本文件;参数必须是 Player(禁加 LivingEntity 重载)。
+     */
     public UUID lastDamagerUuid(Player victim) {
-        RoleAPI a = ensureApi();
-        return a == null ? null : a.getLastDamagerUuid(victim);
+        Player killer = victim == null ? null : victim.getKiller();
+        return killer == null ? null : killer.getUniqueId();
     }
 
-    /** → api.getLastDamager(Player);备用(需要 Player 对象而非 UUID 时,08 §8.10(一)第 13 行)。 */
+    /** 击杀归属备用读口(需要 Player 对象而非 UUID 时);同 lastDamagerUuid 读原版 getKiller,不经 RoleAPI。 */
     public Player lastDamager(Player victim) {
-        RoleAPI a = ensureApi();
-        return a == null ? null : a.getLastDamager(victim);
+        return victim == null ? null : victim.getKiller();
     }
 
     // ── 角色数据操作原语(字符串协议出口)───────────────────────────

@@ -2,6 +2,9 @@ package com.shdfGameplay.component;
 
 import com.hydrokarbs.engine.component.SessionComponent;
 import com.hydrokarbs.engine.port.SessionServices;
+import com.shdfGameplay.lang.Lang;
+
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 /**
  * 本局玩法配置宿主会话组件(开局前由 MatchBootstrap 解析装入、随 SessionRecipe.extraComponents 贡献):
@@ -52,11 +55,14 @@ public final class MatchConfigComponent extends SessionComponent {
      */
     public <T extends Record> T config(final Class<T> type) {
         if (config == null) {
-            throw new IllegalStateException("本局未携带玩法专用配置(modeId=" + modeId + ";该模式未注册 SpecificConfigParser?)");
+            throw new IllegalStateException(Lang.plain("config.match.no_specific_config",
+                    Placeholder.unparsed("mode", modeId)));
         }
         if (!type.isInstance(config)) {
-            throw new IllegalStateException("玩法专用配置类型不符:期望 " + type.getSimpleName()
-                    + ",实为 " + config.getClass().getSimpleName() + "(modeId=" + modeId + ")");
+            throw new IllegalStateException(Lang.plain("config.match.config_type_mismatch",
+                    Placeholder.unparsed("expected", type.getSimpleName()),
+                    Placeholder.unparsed("actual", config.getClass().getSimpleName()),
+                    Placeholder.unparsed("mode", modeId)));
         }
         return type.cast(config);
     }

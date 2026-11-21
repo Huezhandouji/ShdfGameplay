@@ -4,6 +4,10 @@
 # display 配置块已删除(表现层常量后续硬编码)。
 # 来源:2.5-大厅模式与最小闭环 §步骤9;README 对齐注⑩适用项
 
+# 语言选择:装填 lang/<语言>.yml 模板所用语言(com.shdfGameplay.lang.Lang#init 读本键,装配序首行)。
+# 缺省 zh_CN;配置语言的文件缺失时回退 zh_CN 并打一条 warning;数据目录同名语言文件逐键覆盖 jar 默认。
+language: zh_CN
+
 lobby:
   # 大厅活动边界:世界名 + 区域表示法(与 mode_config 图配置同构,type=cube|sphere、form 二选一)
   bounds:

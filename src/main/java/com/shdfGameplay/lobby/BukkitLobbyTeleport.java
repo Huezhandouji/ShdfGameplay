@@ -1,6 +1,8 @@
 package com.shdfGameplay.lobby;
 
+import com.shdfGameplay.lang.Lang;
 import java.util.UUID;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -22,7 +24,9 @@ public final class BukkitLobbyTeleport implements LobbyTeleport {
             return online.teleport(spawn);
         } catch (final Exception e) {
             // 极端兜底(如 spawn 世界运行期被卸载):不向上抛,调用方按离线口径跳过
-            Bukkit.getLogger().warning("大厅回传传送失败,跳过玩家 " + player + ": " + e);
+            Bukkit.getLogger().warning(Lang.plain("log.lobby.teleport_failed",
+                    Placeholder.unparsed("player", player.toString()),
+                    Placeholder.unparsed("error", String.valueOf(e))));
             return false;
         }
     }

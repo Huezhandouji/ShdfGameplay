@@ -7,8 +7,7 @@ import com.hydrokarbs.engine.instance.MatchModeInstanceView;
 import com.hydrokarbs.engine.mode.MatchMode;
 import com.hydrokarbs.engine.mode.MatchModeMetadata;
 import com.hydrokarbs.engine.mode.MatchModeProvider;
-import com.hydrokarbs.engine.session.MatchModeConfig;
-import net.kyori.adventure.text.Component;
+import com.shdfGameplay.lang.Lang;
 import org.bukkit.Material;
 
 import java.util.Optional;
@@ -27,11 +26,11 @@ public final class TeamDeathmatchModes implements MatchModeProvider {
     }
 
     @Override
-    public MatchMode build(final MatchModeConfig cfg) {
+    public MatchMode build() {
         // TODO(5.1): Builder 声明序冻结(组件表 14 行,TdmDeclarationTest=§13.1-8 模板);三判定器内嵌容器 TdmEndConditions 照 5.1 步骤 5 表(纯函数,状态经 MatchModeInstanceView 从 ScoreComponent/RespawnComponent/PhaseComponent 读口取,§14.26 不复制比分/存活数到判定器字段);display 挂 new DisplayComponent.Spec(构建函数方法引用) —— 出自 5.1-TDM模式工厂 步骤 2/5/7。
         // TODO(5.1): teams(RED/BLUE/GREEN/YELLOW)/score/respawn(5~15s 可配)/join 挂法——TeamComponent/ScoreComponent/JoinControlComponent 本次 unzip 核实不在框架 jar(NO_MATCH),待框架线阶段4 交付后填 import;观战安置=JoinControl Spec 配 SPECTATE_WHEN_RUNNING(组件数据零代码) —— 出自 5.1-TDM模式工厂 步骤 2;框架线施工计划 阶段4。
         return new MatchMode.Builder(id())
-                .displayName(Component.text("团队死斗"))
+                .displayName(Lang.render("mode.tdm.name"))
                 .icon(Material.IRON_SWORD)
                 .mapTags(Set.of("competitive"))
                 .metadata(MatchModeMetadata.addTo(new AttributeBag.Builder(), true, 2, 24).build())

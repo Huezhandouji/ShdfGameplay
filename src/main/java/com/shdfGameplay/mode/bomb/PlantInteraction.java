@@ -2,7 +2,6 @@ package com.shdfGameplay.mode.bomb;
 
 import com.hydrokarbs.engine.component.MatchModeComponent;
 import com.hydrokarbs.engine.port.MatchModeInstanceServices;
-import com.hydrokarbs.engine.session.MatchModeConfig;
 import com.hydrokarbs.map.MapDefinition;
 
 import java.util.List;
@@ -36,7 +35,7 @@ public final class PlantInteraction extends MatchModeComponent {
         }
 
         @Override
-        public List<String> checkMap(final MapDefinition map, final MatchModeConfig cfg) {
+        public List<String> checkMap(final MapDefinition map) {
             // TODO(6.2): checkMap 完整化——交互点齐全且 spawns.attacker/spawns.defender 非空;缺失进 REJECTED_BY_TARGET_MODE 的 detail(§3.2-A3) —— 出自 6.2-炸弹攻防 步骤 3。
             return List.of();
         }

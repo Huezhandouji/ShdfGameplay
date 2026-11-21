@@ -2,11 +2,13 @@ package com.shdfGameplay.lobby;
 
 import com.hydrokarbs.api.HydrokarbsApi;
 import com.shdfGameplay.config.LobbyConfig;
+import com.shdfGameplay.lang.Lang;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 /**
  * 游戏流程总开关:launch 启动流程控制并初始化大厅运行态+开局周期(MatchCycle 联动起票节拍);
@@ -67,7 +69,7 @@ public final class GameFlow {
         this.lobby.open(this.lobbyConfig);
         this.cycle.start();
         this.running = true;
-        this.log.info("游戏流程已启动");
+        this.log.info(Lang.plain("log.lobby.flow_started"));
         return true;
     }
 
@@ -108,11 +110,15 @@ public final class GameFlow {
                 dissolvedSessions++;
             } catch (final Exception e) {
                 // 逐会话容错:单会话处理失败不阻断其余会话;异常窗口 running 仍 true,可重入 stop 补扫
-                this.log.warning("stop 解散会话失败,跳过该会话 " + handle.sessionId() + ": " + e);
+                this.log.warning(Lang.plain("log.lobby.stop_session_failed",
+                        Placeholder.unparsed("session", handle.sessionId()),
+                        Placeholder.unparsed("error", String.valueOf(e))));
             }
         }
         this.running = false;
-        this.log.info("游戏流程停止:解散 " + dissolvedSessions + " 个会话,第一段传送 " + returnedPlayers + " 名玩家回大厅");
+        this.log.info(Lang.plain("log.lobby.flow_stopped",
+                Placeholder.unparsed("sessions", String.valueOf(dissolvedSessions)),
+                Placeholder.unparsed("players", String.valueOf(returnedPlayers))));
         return true;
     }
 
@@ -137,6 +143,8 @@ public final class GameFlow {
                 returnedPlayers++;
             }
         }
-        this.log.info("会话 " + sessionId + " 散场收尾:" + returnedPlayers + " 名玩家接回大厅");
+        this.log.info(Lang.plain("log.lobby.session_returned",
+                Placeholder.unparsed("session", sessionId),
+                Placeholder.unparsed("players", String.valueOf(returnedPlayers))));
     }
 }

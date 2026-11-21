@@ -2,10 +2,9 @@ package com.shdfGameplay.mode.bomb;
 
 import com.hydrokarbs.engine.component.MatchModeComponent;
 import com.hydrokarbs.engine.port.MatchModeInstanceServices;
-import com.hydrokarbs.engine.session.MatchModeConfig;
 import com.hydrokarbs.map.MapDefinition;
 import com.shdfGameplay.component.display.DisplayModel;
-import net.kyori.adventure.text.Component;
+import com.shdfGameplay.lang.Lang;
 
 import java.util.List;
 
@@ -33,7 +32,7 @@ public final class BombObjective {
      */
     public DisplayModel.Progress progress() {
         // TODO(6.1): progress() 四态——UNPLANTED(0,1,待安放)/PLANTED(1,1,已安放)/EXPLODED(1,1,已引爆)/DEFUSED(0,1,已拆除);label 按状态语义取值(§5.2 骨架 label 疑似错位,按 6.1-Q2 建议实现) —— 出自 6.1-炸弹攻防 步骤 3/待裁决 Q2。
-        return new DisplayModel.Progress(0, 1, Component.text("待安放"));
+        return new DisplayModel.Progress(0, 1, Lang.render("mode.bomb.progress.pending"));
     }
 
     /**
@@ -64,7 +63,7 @@ public final class BombObjective {
             }
 
             @Override
-            public List<String> checkMap(final MapDefinition map, final MatchModeConfig cfg) {
+            public List<String> checkMap(final MapDefinition map) {
                 // TODO(6.1): bomb-site 区域与配套 plant_*/defuse_* 交互点的完整清单校验前移至炸弹模式 SpecificConfigParser
                 //             开局响亮(带病配置不进会话);checkMap 仅剩地图侧校验(mapTags 等,MapDefinition.TAGS) —— 出自 6.1-炸弹攻防 步骤 3;6.2-炸弹攻防 步骤 3(§3.2-A3)。
                 return List.of();

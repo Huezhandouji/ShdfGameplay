@@ -2,8 +2,10 @@ package com.shdfGameplay.lobby;
 
 import com.hydrokarbs.api.SessionEventView;
 import com.shdfGameplay.config.LobbyConfig;
+import com.shdfGameplay.lang.Lang;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 /**
  * 散场单闸:全工程唯一 subscribeSessionEvents 订阅点——Dissolved 接引收尾、MemberLeft 单人传送回大厅、ModeSwitchCompleted(to=limbo) 记待散信号。
@@ -51,8 +53,8 @@ public final class LobbyReturnListener implements Consumer<SessionEventView> {
         } else if (event instanceof SessionEventView.ModeSwitchCompleted completed
                 && "limbo".equals(completed.to())) {
             // 待散信号(§4.4 不变式④):无显式去向回落 limbo 属异常态兜底,本阶段正常流程不应出现
-            this.log.warning("会话 " + completed.session().value()
-                    + " 切至 limbo:记待散信号(本阶段正常流程不应出现,MatchEndReturn 阶段5 回接)");
+            this.log.warning(Lang.plain("log.lobby.limbo_signal",
+                    Placeholder.unparsed("session", completed.session().value())));
         }
     }
 

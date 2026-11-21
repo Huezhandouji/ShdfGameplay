@@ -1,10 +1,12 @@
 package com.shdfGameplay.config;
 
+import com.shdfGameplay.lang.Lang;
 import com.shdfGameplay.map.regionNotation.Region;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -55,11 +57,13 @@ public record LobbyConfig(World boundsWorld, Region bounds, Location spawn, long
      */
     public static LobbyConfig from(final Path file) {
         if (!Files.isRegularFile(file)) {
-            throw new IllegalStateException("config.yml 缺失(应先 saveDefaultConfig 释放): " + file);
+            throw new IllegalStateException(Lang.plain("config.main_missing",
+                    Placeholder.unparsed("file", String.valueOf(file))));
         }
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file.toFile());
         if (yaml.getKeys(false).isEmpty()) {
-            throw new IllegalStateException("config.yml 解析失败(空文件或语法错误): " + file);
+            throw new IllegalStateException(Lang.plain("config.main_parse_failed",
+                    Placeholder.unparsed("file", String.valueOf(file))));
         }
         return parse(yaml, file);
     }
@@ -76,13 +80,16 @@ public record LobbyConfig(World boundsWorld, Region bounds, Location spawn, long
     static LobbyConfig parse(final YamlConfiguration yaml, final Path file) {
         final ConfigurationSection lobby = yaml.getConfigurationSection("lobby");
         if (lobby == null) {
-            throw new IllegalStateException("config.yml 缺 lobby 块: " + file);
+            throw new IllegalStateException(Lang.plain("config.lobby.block_missing",
+                    Placeholder.unparsed("file", String.valueOf(file))));
         }
         try {
             return parseLobby(lobby);
         } catch (final IllegalStateException e) {
             // 子键定位消息补上主配置文件上下文,与 GameConfig.from 的带病口径一致
-            throw new IllegalStateException("config.yml lobby 块解析失败: " + e.getMessage() + " @ " + file, e);
+            throw new IllegalStateException(Lang.plain("config.lobby.block_parse_failed",
+                    Placeholder.unparsed("message", e.getMessage()),
+                    Placeholder.unparsed("file", String.valueOf(file))), e);
         }
     }
 
@@ -90,11 +97,13 @@ public record LobbyConfig(World boundsWorld, Region bounds, Location spawn, long
         final ConfigurationSection bounds = requireSection(lobby, "bounds");
         final long countdown = lobby.getLong("countdown", DEFAULT_COUNTDOWN);
         if (countdown < 0) {
-            throw new IllegalStateException("lobby.countdown 不能为负(tick): " + countdown);
+            throw new IllegalStateException(Lang.plain("config.lobby.countdown_negative",
+                    Placeholder.unparsed("count", String.valueOf(countdown))));
         }
         final int minPlayers = lobby.getInt("min-players", DEFAULT_MIN_PLAYERS);
         if (minPlayers < 1) {
-            throw new IllegalStateException("lobby.min-players 不能小于 1: " + minPlayers);
+            throw new IllegalStateException(Lang.plain("config.lobby.min_players_below_one",
+                    Placeholder.unparsed("count", String.valueOf(minPlayers))));
         }
         return new LobbyConfig(
                 parseWorld(bounds, "bounds"),
@@ -118,7 +127,8 @@ public record LobbyConfig(World boundsWorld, Region bounds, Location spawn, long
         final boolean enabled = vote == null ? DEFAULT_VOTE_ENABLED : vote.getBoolean("enabled", DEFAULT_VOTE_ENABLED);
         final int mapAmount = vote == null ? DEFAULT_VOTE_AMOUNT : vote.getInt("map_amount", DEFAULT_VOTE_AMOUNT);
         if (enabled && mapAmount < 1) {
-            throw new IllegalStateException("lobby.map_vote_setting.map_amount 不能小于 1(开启投票时): " + mapAmount);
+            throw new IllegalStateException(Lang.plain("config.lobby.map_amount_below_one",
+                    Placeholder.unparsed("count", String.valueOf(mapAmount))));
         }
         return new MapVoteSetting(enabled, mapAmount);
     }
@@ -127,11 +137,14 @@ public record LobbyConfig(World boundsWorld, Region bounds, Location spawn, long
     private static World parseWorld(final ConfigurationSection section, final String what) {
         final String name = section.getString("world");
         if (name == null || name.isBlank()) {
-            throw new IllegalStateException("lobby." + what + ".world 缺失或留白");
+            throw new IllegalStateException(Lang.plain("config.lobby.world_missing",
+                    Placeholder.unparsed("what", what)));
         }
         final World world = Bukkit.getWorld(name);
         if (world == null) {
-            throw new IllegalStateException("lobby." + what + ".world 世界不在场: " + name);
+            throw new IllegalStateException(Lang.plain("config.lobby.world_absent",
+                    Placeholder.unparsed("what", what),
+                    Placeholder.unparsed("name", name)));
         }
         return world;
     }
@@ -139,7 +152,8 @@ public record LobbyConfig(World boundsWorld, Region bounds, Location spawn, long
     private static ConfigurationSection requireSection(final ConfigurationSection parent, final String key) {
         final ConfigurationSection section = parent.getConfigurationSection(key);
         if (section == null) {
-            throw new IllegalStateException("lobby." + key + " 块缺失或非子结构");
+            throw new IllegalStateException(Lang.plain("config.lobby.section_missing",
+                    Placeholder.unparsed("key", key)));
         }
         return section;
     }

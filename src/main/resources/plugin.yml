@@ -7,7 +7,8 @@ api-version: '1.21.11'
 load: POSTWORLD
 
 # TODO(2.5): 框架硬依赖 depend: [Hydrokarbs](注册时序反转:depend + onEnable load 后显式注册)+角色系统软依赖 softdepend: [ShadowHunterRolesPlugin];保留 name/version/main/paper-plugin-loader/api-version/load/authors 全部既有字段,不写 commands: 段(/shdf 走 Brigadier 代码注册) —— 出自 README 对齐注③⑧;08-角色桥接 §8.8 表;施工计划/2.5-大厅模式与最小闭环(:29)。
-depend: [ Hydrokarbs ]
+# ZeoliteLib 硬依赖出自 本次任务(大厅交互层):快捷栏物品/投票菜单运行期直接消费其物品与菜单支持库(懒模块随首个 start 初始化)。
+depend: [ Hydrokarbs, ZeoliteLib ]
 softdepend: [ ShadowHunterRolesPlugin ]
 
 authors: [ HueZhandouji ]

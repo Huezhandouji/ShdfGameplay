@@ -83,7 +83,8 @@ public final class RoleComponent extends MatchModeComponent {
     public void onRoleDeath(UUID victim, String deadRoleId) {
         // TODO(3.5): 官方事件在角色插件 PlayerDeathEvent 处理器内同步发布(主线程、分发窗口内)⇒ 此刻 Bukkit.getPlayer(victim)
         // 仍非 null、getLastDamageCause() 仍可读;四原始值抽取薄层:①killer=facade.lastDamagerUuid(victimPlayer)——
-        // ★ 不是 player.getKiller()(全仓含测试禁用);②killerInInstance=svc().self().participant(killer) 在场;
+        // ★ getKiller 直呼全仓禁用,读口唯一住 RoleFacade(角色插件已改伤害侧 setKiller 记账,facade 读原版 getKiller
+        // 且不依赖角色插件在场);②killerInInstance=svc().self().participant(killer) 在场;
         // ③nativeDamager=victimPlayer.getLastDamageCause() instanceof EntityDamageByEntityEvent 取 damager(投射物只做交叉验证不做归属来源);
         // ④cause;+RoleEventSynth.trustedKill 门:通过→发布 RoleKillEvent.of(killer, victim, deadRoleId, svc().self().tick()),
         // 不通过→发布 ParticipantKilled(victim, null, cause)(javap 已核 record(int,long,UUID,UUID,DamageCause) implements Structural);

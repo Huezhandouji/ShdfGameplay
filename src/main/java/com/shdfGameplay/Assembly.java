@@ -20,10 +20,13 @@ import com.shdfGameplay.lobby.GameFlow;
 import com.shdfGameplay.lobby.LobbyManager;
 import com.shdfGameplay.lobby.LobbyReturnListener;
 import com.shdfGameplay.lobby.LobbyTeleport;
+import com.shdfGameplay.lobby.LobbyView;
 import com.shdfGameplay.lobby.LobbyVote;
 import com.shdfGameplay.lobby.MatchBootstrap;
 import com.shdfGameplay.lobby.MatchCycle;
 import com.shdfGameplay.lobby.ReadyState;
+import com.shdfGameplay.lobby.ui.BukkitLobbyView;
+import com.shdfGameplay.lang.Lang;
 import com.shdfGameplay.mode.bosswar.BosswarModes;
 import com.shdfGameplay.mode.conquest.ConquestModes;
 import com.shdfGameplay.session.SessionRecipes;
@@ -31,6 +34,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 /**
  * 宿主装配器:全工程唯一 L0 装配点(框架 API 在场检查→配置装配→大厅接线→显式注册→桥接接线;
@@ -70,10 +74,12 @@ public final class Assembly {
     }
 
     /**
-     * 装配序目录:①在场检查→首启资源释放→②配置装配→③/3.5 大厅接线与命令面→④模式与会话配方注册→⑤桥接接线;
+     * 装配序目录:⓪语言装填→①在场检查→首启资源释放→②配置装配→③/3.5 大厅接线与命令面→④模式与会话配方注册→⑤桥接接线;
      * 拒载即中止(后续步骤不执行)。
      */
     public void assemble() {
+        // 0. i18n 门面先行装填(全工程文案出口 Lang.render/plain 依赖语言模板,须早于任何文案消费)
+        Lang.init(this.plugin);
         // 1. 首行在场检查(v1.14 口径:api==null 拒载不崩服,无 API_VERSION 数字比对)
         final HydrokarbsApi hk = loadApi();
         if (hk == null) {
@@ -99,7 +105,7 @@ public final class Assembly {
     private HydrokarbsApi loadApi() {
         final HydrokarbsApi hk = this.plugin.getServer().getServicesManager().load(HydrokarbsApi.class);
         if (hk == null) {
-            this.plugin.getLogger().severe("HydrokarbsApi 不在场:Hydrokarbs 未启用或未注册服务,ShdfGameplay 拒载");
+            this.plugin.getLogger().severe(Lang.plain("log.assembly.api_absent"));
             this.plugin.setEnabled(false);
         }
         return hk;
@@ -119,7 +125,9 @@ public final class Assembly {
     private GameConfigManager assembleConfigs() {
         final GameConfigManager games = new GameConfigManager(this.plugin.getDataFolder().toPath());
         games.init();
-        this.plugin.getLogger().info("配置读取完成:" + games.modeIds().size() + " 个模式 / " + games.all().size() + " 张图");
+        this.plugin.getLogger().info(Lang.plain("log.assembly.configs_loaded",
+                Placeholder.unparsed("mode_count", String.valueOf(games.modeIds().size())),
+                Placeholder.unparsed("map_count", String.valueOf(games.all().size()))));
         return games;
     }
 
@@ -144,8 +152,10 @@ public final class Assembly {
         // 2.5 本阶段无角色玩法,恒真 lambda 占位——真实现提前接会让角色插件缺席陪葬全部模式开局 —— 出自 2.5 步骤4「第五门留接口」
         final MatchBootstrap bootstrap = new MatchBootstrap(hk, vote, games, this.parsers, this.sessionRecipes,
                 lobbyConfig.minPlayers(), () -> true, lobby::leave);
+        // 交互层生产壳(物品/投票菜单/侧边计分板,ZeoliteLib 菜单与物品支持库):随周期起停、每拍差集驱动 —— 出自 本次任务(大厅交互层)
+        final LobbyView view = new BukkitLobbyView(lobby, vote, ready, games, lobbyConfig);
         // 开局周期生产壳:判定核参数(人数门/准备门/倒计时)取 lobby 块,起票口径 map_vote_setting
-        this.cycle = new BukkitMatchCycle(this.plugin, games, lobbyConfig, lobby, vote, ready, bootstrap, new Random());
+        this.cycle = new BukkitMatchCycle(this.plugin, games, lobbyConfig, lobby, vote, ready, bootstrap, view, new Random());
         final GameFlow flow = new GameFlow(hk, lobbyConfig, lobby, this.cycle, teleport, this.plugin.getLogger());
         // 全工程唯一订阅接线(散场单闸回调体;五参构造)—— 出自 04 §4.6/§4.8
         this.sessionEvents = hk.subscribeSessionEvents(

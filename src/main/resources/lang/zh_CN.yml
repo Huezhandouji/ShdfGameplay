@@ -1,0 +1,156 @@
+# 语言文件(简体中文):ShdfGameplay 全部玩家可见文案与日志/异常文案的唯一来源,
+# 经 com.shdfGameplay.lang.Lang 装填——玩家可见文本 Lang.render("键") / 日志与异常 Lang.plain("键")。
+# 键为顶层点分键(每行一个,不嵌套),分组只用注释行;样式标签(MiniMessage 语法)直接写在模板里,如 <red>…</red>。
+# 命名占位符在模板内写作 <占位名> 标签,调用侧经 Placeholder.unparsed("占位名", 值) 注入;
+# 玩家名/地图名等运行期值严禁字符串拼进模板(防 MiniMessage 注入);字面 "<" 写作 "\<"。
+# 本文件随 jar 分发,首启由 DefaultResources 释放到 plugins/ShdfGameplay/lang/;
+# 数据目录同名文件逐键覆盖在本文件之上(老安装缺新键自动回退 jar 默认,改过就保得住)。
+# 来源:i18n 基建(第 1 轮)——模板文本与颜色已逐字对照既有源码核实,不得顺手改样式。
+
+# —— 命令:游戏流程 ——
+command.root.description: "SHDF 游戏流程主命令"
+command.launch.started: "<green>游戏流程已启动,大厅运行中</green>"
+command.launch.already_running: "<yellow>游戏流程已在运行中,无需重复启动</yellow>"
+command.stop.stopped: "<green>游戏流程已停止,会话已解散,玩家已送回大厅</green>"
+command.stop.not_running: "<yellow>游戏流程未在运行</yellow>"
+
+# —— 命令:大厅进出 ——
+command.lobby.not_running: "<yellow>游戏流程未运行</yellow>"
+command.lobby.in_session: "<yellow>正在对局中,请先 /shdf leave 离场</yellow>"
+command.lobby.entered: "<green>已进入大厅</green>"
+command.lobby.teleport_failed: "<red>大厅传送失败,请稍后再试</red>"
+command.leave.left: "<green>已离场,正在返回大厅</green>"
+command.leave.not_in_session: "<yellow>不在任何对局中</yellow>"
+command.player_only: "<red>该命令仅玩家可用</red>"
+
+# —— 命令:投票 ——
+command.vote.arg: "序号"
+
+# —— 大厅:地图投票 ——
+lobby.vote.not_in_lobby: "<red>不在大厅内,无法投票</red>"
+lobby.vote.out_of_range: "<red>候选序号越界(当前候选 <count> 张)</red>"
+lobby.vote.cast: "<green>已投:[<choice>] <candidate></green>"
+lobby.vote.candidate_prefix: "<gray>[<number>] </gray>"
+lobby.vote.candidate_entry: "<aqua><candidate></aqua>"
+
+# —— 大厅:准备 ——
+lobby.ready.not_in_lobby: "<red>不在大厅内,无法准备</red>"
+lobby.ready.disabled: "<yellow>准备功能未启用</yellow>"
+lobby.ready.toggle_on: "<green>已准备</green>"
+lobby.ready.toggle_off: "<green>已取消准备</green>"
+
+# —— 大厅:侧边栏 ——
+lobby.sidebar.title: "<gold><bold>SHDF 大厅</bold></gold>"
+lobby.sidebar.phase: "<white><bold>准备阶段</bold></white>"
+lobby.sidebar.players: "<gray>当前大厅: <count> 人</gray>"
+lobby.sidebar.requirements: "<white><bold>对局开始需要:</bold></white>"
+lobby.sidebar.gate_players_met: "<green>- 大厅至少 <min> 人</green>"
+lobby.sidebar.gate_players_unmet: "<gray>- 大厅至少 <min> 人</gray>"
+lobby.sidebar.gate_ready_met: "<green>- 全员已准备 (<ready>/<total>)</green>"
+lobby.sidebar.gate_ready_unmet: "<gray>- 全员已准备 (<ready>/<total>)</gray>"
+lobby.sidebar.countdown: "<gold><seconds> 秒后开局</gold>"
+
+# —— 大厅:物品 ——
+lobby.items.vote_name: "<blue><bold>票选地图</bold></blue>"
+lobby.items.vote_lore_1: "<gray>右键打开地图投票菜单</gray>"
+lobby.items.vote_lore_2: "<gray>也可在聊天点击候选行投票</gray>"
+lobby.items.ready_on_name: "<green><bold>已经准备</bold></green>"
+lobby.items.ready_off_name: "<red><bold>尚未准备</bold></red>"
+lobby.items.ready_lore_1: "<gray>右键切换准备状态</gray>"
+lobby.items.ready_lore_2: "<gray>全员准备且人数达标后立即开局</gray>"
+
+# —— 大厅:投票菜单 ——
+lobby.menu.title: "<dark_gray>地图投票</dark_gray>"
+lobby.menu.no_candidates: "<yellow>本轮暂无投票候选</yellow>"
+lobby.menu.candidate_name: "<aqua><bold>[<index>] <name></bold></aqua>"
+lobby.menu.candidate_id: "<gray><candidate></gray>"
+lobby.menu.candidate_desc: "<gray><description></gray>"
+lobby.menu.candidate_votes: "<gold>票数: <count></gold>"
+lobby.menu.candidate_no_votes: "<dark_gray>暂无投票</dark_gray>"
+lobby.menu.candidate_voter: "<gray>· <voter></gray>"
+lobby.menu.candidate_hint: "<yellow>点击投票(可改票)</yellow>"
+
+# —— 大厅:开局周期 ——
+lobby.cycle.countdown_started: "<yellow>人数已凑齐,<seconds> 秒后开局</yellow>"
+lobby.cycle.countdown_aborted: "<yellow>人数不足,开局倒计时中止</yellow>"
+lobby.cycle.launched: "<green>对局已开启,祝好运!</green>"
+lobby.cycle.launch_rejections: "<yellow>未入局:<rejections></yellow>"
+lobby.cycle.launch_failed: "<red>开局未成:<reason></red>"
+lobby.cycle.vote_board_title: "<gray>投票:点击选择下一场</gray>"
+
+# —— 大厅:开局装配 ——
+lobby.bootstrap.min_players: '人数不足:<present> \< <required>(继续等)'
+lobby.bootstrap.no_candidate: "零票且无轮换兜底,本轮不开局(重新起票)"
+lobby.bootstrap.map_missing: "目标地图未注册:<candidate>(摘除候选重收票)"
+lobby.bootstrap.mode_missing: "开局模式未注册:<mode>(装配事故,详见 SEVERE 日志)"
+lobby.bootstrap.role_missing: "角色系统不在场:<mode>(摘除该玩法候选,大厅照常)"
+lobby.bootstrap.config_missing: "图配置缺席:<candidate>(检查 mode_config 标记文件)"
+lobby.bootstrap.parse_failed: "玩法配置解析失败:<reason>(全员留大厅)"
+lobby.bootstrap.join_rejected: "<player>:<detail>"
+
+# —— 模式名 ——
+mode.bomb.name: "炸弹攻防"
+mode.bosswar.name: "首领战"
+mode.conquest.name: "占领战"
+mode.tdm.name: "团队死斗"
+
+# —— 模式:炸弹攻防 ——
+mode.bomb.progress.pending: "待安放"
+
+# —— 日志:大厅 ——
+log.lobby.cycle_tick_crash: "大厅开局周期单拍异常,停止周期(防每拍重炸)"
+log.lobby.candidate_pool_empty: "候选池为空(无图配置),本轮起票无候选——检查 map_mode_config 标记文件与 mode_config/"
+log.lobby.mode_missing_severe: "开局模式未注册(装配事故:registerMode 集与会话配方登记集一致性被破坏):<mode>"
+log.lobby.flow_started: "游戏流程已启动"
+log.lobby.stop_session_failed: "stop 解散会话失败,跳过该会话 <session>: <error>"
+log.lobby.flow_stopped: "游戏流程停止:解散 <sessions> 个会话,第一段传送 <players> 名玩家回大厅"
+log.lobby.session_returned: "会话 <session> 散场收尾:<players> 名玩家接回大厅"
+log.lobby.limbo_signal: "会话 <session> 切至 limbo:记待散信号(本阶段正常流程不应出现,MatchEndReturn 阶段5 回接)"
+log.lobby.teleport_failed: "大厅回传传送失败,跳过玩家 <player>: <error>"
+
+# —— 日志:装配 ——
+log.assembly.api_absent: "HydrokarbsApi 不在场:Hydrokarbs 未启用或未注册服务,ShdfGameplay 拒载"
+log.assembly.configs_loaded: "配置读取完成:<mode_count> 个模式 / <map_count> 张图"
+
+# —— 日志:配置 ——
+log.config.marker_missing: "地图模式标记文件缺失,图配置按空集处理: <file>"
+log.config.marker_invalid: "地图模式标记文件带病,图配置按空集处理: <message> @ <file>"
+log.config.marker_duplicate: "地图模式标记条目重复,跳过: <entry>"
+log.config.marker_bad_format: "地图模式标记条目格式应为 模式/图,跳过: <entry>"
+log.config.marker_no_file: "地图模式标记条目无对应配置文件(试 .yaml/.yml),跳过: <entry>"
+log.config.map_config_skipped: "跳过图配置: <message>"
+log.config.resources.released: "默认资源释放完成:新拷贝 <copied> 个,已存在跳过 <skipped> 个"
+log.config.resources.released_with_failures: "默认资源释放完成:新拷贝 <copied> 个,已存在跳过 <skipped> 个,失败 <failed> 个(各失败项已另行 warning)"
+log.config.resources.entry_stream_missing: "资源释放失败(条目流缺席,跳过): <entry>"
+log.config.resources.copy_failed: "资源释放失败(跳过): <target> - <error>"
+log.config.instance_world_not_ready: "副本世界未就绪,跳过传送:<world>"
+
+# —— 配置校验:主文件 ——
+config.main_missing: "config.yml 缺失(应先 saveDefaultConfig 释放): <file>"
+config.main_parse_failed: "config.yml 解析失败(空文件或语法错误): <file>"
+
+# —— 配置校验:大厅 ——
+config.lobby.block_missing: "config.yml 缺 lobby 块: <file>"
+config.lobby.block_parse_failed: "config.yml lobby 块解析失败: <message> @ <file>"
+config.lobby.countdown_negative: "lobby.countdown 不能为负(tick): <count>"
+config.lobby.min_players_below_one: "lobby.min-players 不能小于 1: <count>"
+config.lobby.map_amount_below_one: "lobby.map_vote_setting.map_amount 不能小于 1(开启投票时): <count>"
+config.lobby.world_missing: "lobby.<what>.world 缺失或留白"
+config.lobby.world_absent: "lobby.<what>.world 世界不在场: <name>"
+config.lobby.section_missing: "lobby.<key> 块缺失或非子结构"
+
+# —— 配置校验:资源释放 ——
+config.resources.jar_read_failed: "插件 jar 读取失败,资源释放中止: <file>"
+
+# —— 配置校验:图配置 ——
+config.map.parse_failed: "mode_config 解析失败(空文件或语法错误): <file>"
+config.map.map_path_missing: "mode_config 缺 map_path 键: <file>"
+config.map.map_path_invalid: "mode_config map_path 非法路径: <path> @ <file>"
+config.map.world_dir_missing: "地图世界目录未落盘(先落盘后注册): <dir>"
+
+# —— 配置校验:会话配方 ——
+config.session.recipe_missing: "模式未登记会话配方: <mode>"
+
+# —— 配置:对局装配 ——
+config.match.no_specific_config: "本局未携带玩法专用配置(modeId=<mode>;该模式未注册 SpecificConfigParser?)"
+config.match.config_type_mismatch: "玩法专用配置类型不符:期望 <expected>,实为 <actual>(modeId=<mode>)"

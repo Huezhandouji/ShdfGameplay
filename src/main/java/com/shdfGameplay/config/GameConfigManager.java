@@ -1,5 +1,7 @@
 package com.shdfGameplay.config;
 
+import com.shdfGameplay.lang.Lang;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -14,6 +16,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
@@ -112,11 +115,13 @@ public final class GameConfigManager {
      */
     private static YamlConfiguration loadMainConfig(final Path file) {
         if (!Files.isRegularFile(file)) {
-            throw new IllegalStateException("config.yml 缺失(应先 saveDefaultConfig 释放): " + file);
+            throw new IllegalStateException(Lang.plain("config.main_missing",
+                    Placeholder.unparsed("file", String.valueOf(file))));
         }
         final YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file.toFile());
         if (yaml.getKeys(false).isEmpty()) {
-            throw new IllegalStateException("config.yml 解析失败(空文件或语法错误): " + file);
+            throw new IllegalStateException(Lang.plain("config.main_parse_failed",
+                    Placeholder.unparsed("file", String.valueOf(file))));
         }
         return yaml;
     }
@@ -133,7 +138,8 @@ public final class GameConfigManager {
         final Path markerFile = this.dataDir
                 .resolve(markerRaw == null || markerRaw.isBlank() ? DEFAULT_MARKER_PATH : markerRaw);
         if (!Files.isRegularFile(markerFile)) {
-            LOGGER.warning("地图模式标记文件缺失,图配置按空集处理: " + markerFile);
+            LOGGER.warning(Lang.plain("log.config.marker_missing",
+                    Placeholder.unparsed("file", String.valueOf(markerFile))));
             return Map.of();
         }
         final List<String> entries;
@@ -141,7 +147,9 @@ public final class GameConfigManager {
             final YamlConfiguration markerYaml = YamlConfiguration.loadConfiguration(markerFile.toFile());
             entries = ConfigUtil.getStringList(ConfigUtil.deepValues(markerYaml), "map_modes");
         } catch (final IllegalStateException e) {
-            LOGGER.warning("地图模式标记文件带病,图配置按空集处理: " + e.getMessage() + " @ " + markerFile);
+            LOGGER.warning(Lang.plain("log.config.marker_invalid",
+                    Placeholder.unparsed("message", e.getMessage()),
+                    Placeholder.unparsed("file", String.valueOf(markerFile))));
             return Map.of();
         }
         final Path configRoot = this.dataDir.resolve("mode_config");
@@ -153,7 +161,8 @@ public final class GameConfigManager {
                 continue;
             }
             if (!seen.add(config.modeId() + "/" + config.mapId())) {
-                LOGGER.warning("地图模式标记条目重复,跳过: " + entry);
+                LOGGER.warning(Lang.plain("log.config.marker_duplicate",
+                        Placeholder.unparsed("entry", entry)));
                 continue;
             }
             byMode.computeIfAbsent(config.modeId(), mode -> new ArrayList<>()).add(config);
@@ -171,18 +180,21 @@ public final class GameConfigManager {
     private GameConfig readMarkedEntry(final Path configRoot, final String entry) {
         final String[] parts = entry.strip().split("/");
         if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
-            LOGGER.warning("地图模式标记条目格式应为 模式/图,跳过: " + entry);
+            LOGGER.warning(Lang.plain("log.config.marker_bad_format",
+                    Placeholder.unparsed("entry", entry)));
             return null;
         }
         final Path file = resolveConfigFile(configRoot, parts[0], parts[1]);
         if (file == null) {
-            LOGGER.warning("地图模式标记条目无对应配置文件(试 .yaml/.yml),跳过: " + entry);
+            LOGGER.warning(Lang.plain("log.config.marker_no_file",
+                    Placeholder.unparsed("entry", entry)));
             return null;
         }
         try {
             return GameConfig.from(parts[0], file);
         } catch (final IllegalStateException e) {
-            LOGGER.warning("跳过图配置: " + e.getMessage());
+            LOGGER.warning(Lang.plain("log.config.map_config_skipped",
+                    Placeholder.unparsed("message", e.getMessage())));
             return null;
         }
     }
